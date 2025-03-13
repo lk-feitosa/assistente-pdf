@@ -17,71 +17,64 @@ export interface SearchResponse {
   totalPages: number;
 }
 
-// Mock base URL - would be replaced with actual API endpoint
-const API_BASE_URL = "/api";
+// API base URL - ajuste para o seu endpoint real
+const API_BASE_URL = "https://api.assistenteinteligentepdf.com.br/api";
 
 // Text search function
 export async function searchLegalText(query: string, page: number = 1): Promise<SearchResponse> {
   try {
-    // In a real implementation, this would call your actual API
-    // const response = await fetch(`${API_BASE_URL}/buscar?q=${encodeURIComponent(query)}&page=${page}`);
+    // Fazendo a chamada real para a API
+    const response = await fetch(`${API_BASE_URL}/buscar?q=${encodeURIComponent(query)}&page=${page}`);
     
-    // For demo purposes, we'll simulate an API call with a timeout
-    return await new Promise((resolve) => {
-      setTimeout(() => {
-        // Mock data response
-        resolve({
-          results: Array(5).fill(null).map((_, i) => ({
-            id: `result-${i}-${Date.now()}`,
-            title: `Lei ${10000 + i} - Resultados para "${query}"`,
-            summary: `Este é um texto resumido da lei que contém o termo "${query}". O texto completo pode ser acessado através do link.`,
-            link: `https://example.com/leis/${10000 + i}`
-          })),
-          totalResults: 25,
-          page,
-          totalPages: 5
-        });
-      }, 1500);
-    });
+    if (!response.ok) {
+      throw new Error(`Erro na API: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    return data;
   } catch (error) {
     console.error("Error searching legal text:", error);
-    toast.error("Erro ao buscar informações legais");
-    throw error;
+    toast.error("Erro ao buscar informações legais. Por favor, tente novamente.");
+    
+    // Em caso de erro, retornamos uma resposta vazia para não quebrar a UI
+    return {
+      results: [],
+      totalResults: 0,
+      page: 1,
+      totalPages: 0
+    };
   }
 }
 
 // PDF analysis function
 export async function analyzePDF(file: File, page: number = 1): Promise<SearchResponse> {
   try {
-    // In real implementation:
-    // const formData = new FormData();
-    // formData.append('pdf', file);
-    // const response = await fetch(`${API_BASE_URL}/analisar-pdf?page=${page}`, {
-    //   method: 'POST',
-    //   body: formData
-    // });
+    // Criando FormData para envio do arquivo
+    const formData = new FormData();
+    formData.append('pdf', file);
     
-    // For demo, simulate API call with timeout
-    return await new Promise((resolve) => {
-      setTimeout(() => {
-        // Mock data response with similarity scores
-        resolve({
-          results: Array(5).fill(null).map((_, i) => ({
-            id: `pdf-result-${i}-${Date.now()}`,
-            title: `Lei ${20000 + i} - Similar ao documento enviado`,
-            summary: `Este documento tem conteúdo similar ao PDF enviado. Similaridade detectada em seções relacionadas a procedimentos legais.`,
-            link: `https://example.com/leis/${20000 + i}`,
-            similarity: 95 - (i * 5) // 95%, 90%, 85%, etc.
-          })),
-          totalResults: 15,
-          page,
-          totalPages: 3
-        });
-      }, 2500); // Slightly longer to simulate PDF processing
+    // Fazendo a chamada real para a API
+    const response = await fetch(`${API_BASE_URL}/analisar-pdf?page=${page}`, {
+      method: 'POST',
+      body: formData
     });
+    
+    if (!response.ok) {
+      throw new Error(`Erro na API: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    return data;
   } catch (error) {
     console.error("Error analyzing PDF:", error);
-    toast.error("Erro ao analisar o PDF");
-    throw error;
+    toast.error("Erro ao analisar o PDF. Por favor, tente novamente.");
+    
+    // Em caso de erro, retornamos uma resposta vazia para não quebrar a UI
+    return {
+      results: [],
+      totalResults: 0,
+      page: 1,
+      totalPages: 0
+    };
   }
 }
