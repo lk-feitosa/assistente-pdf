@@ -3,6 +3,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Search } from "lucide-react";
+import { toast } from "sonner";
 
 interface SearchBarProps {
   onSearch: (query: string) => void;
@@ -14,9 +15,21 @@ const SearchBar = ({ onSearch, isLoading }: SearchBarProps) => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (query.trim()) {
-      onSearch(query);
+    
+    // Validamos que a busca contém o termo "lei" (como mostrado no exemplo do WhatsApp)
+    if (!query.trim()) {
+      toast.error("Por favor, digite um termo para pesquisar");
+      return;
     }
+    
+    // Dica para o usuário, similar ao bot do WhatsApp
+    if (!query.toLowerCase().includes("lei")) {
+      toast.info("Dica: Comece sua pesquisa com a palavra 'Lei'", {
+        description: "Exemplo: Lei sobre meio ambiente"
+      });
+    }
+    
+    onSearch(query);
   };
 
   return (
