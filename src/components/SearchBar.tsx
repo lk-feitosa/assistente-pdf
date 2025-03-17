@@ -16,14 +16,15 @@ const SearchBar = ({ onSearch, isLoading }: SearchBarProps) => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Validamos que a busca contém o termo "lei" (como mostrado no exemplo do WhatsApp)
     if (!query.trim()) {
       toast.error("Por favor, digite um termo para pesquisar");
       return;
     }
     
-    // Dica para o usuário, similar ao bot do WhatsApp
-    if (!query.toLowerCase().includes("lei")) {
+    // Sugestão para iniciar com "Lei", similar ao bot do WhatsApp
+    if (!query.toLowerCase().includes("lei") && 
+        !query.toLowerCase().includes("código") && 
+        !query.toLowerCase().includes("decreto")) {
       toast.info("Dica: Comece sua pesquisa com a palavra 'Lei'", {
         description: "Exemplo: Lei sobre meio ambiente"
       });
