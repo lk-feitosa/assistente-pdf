@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Toaster } from "@/components/ui/sonner";
 import { toast } from "sonner";
@@ -11,7 +12,7 @@ import CategoryFilter from "@/components/CategoryFilter";
 import SearchHistory from "@/components/SearchHistory";
 import DocumentComparison from "@/components/DocumentComparison";
 import { searchLegalText, analyzePDF, SearchResponse, SearchResult } from "@/lib/api";
-import { Scale, FileText, ChevronLeft, AlertCircle, Filter } from "lucide-react";
+import { Scale, FileText, ChevronLeft, AlertCircle } from "lucide-react";
 
 const Index = () => {
   const [searchResults, setSearchResults] = useState<SearchResponse | null>(null);
@@ -148,29 +149,56 @@ const Index = () => {
   };
 
   const handleCompareDocument = (result: SearchResult) => {
+    // Se o documento já está selecionado como documentA, remova-o
+    if (comparisonDocs.documentA?.id === result.id) {
+      setComparisonDocs({ ...comparisonDocs, documentA: null });
+      toast.info("Documento removido da comparação");
+      return;
+    }
+    
+    // Se o documento já está selecionado como documentB, remova-o
+    if (comparisonDocs.documentB?.id === result.id) {
+      setComparisonDocs({ ...comparisonDocs, documentB: null });
+      toast.info("Documento removido da comparação");
+      return;
+    }
+    
+    // Se não temos documentA, adicione como documentA
     if (!comparisonDocs.documentA) {
       setComparisonDocs({ ...comparisonDocs, documentA: result });
       toast.info("Primeiro documento selecionado", {
         description: "Selecione mais um documento para comparar.",
       });
-    } else if (!comparisonDocs.documentB) {
+      return;
+    }
+    
+    // Se não temos documentB, adicione como documentB
+    if (!comparisonDocs.documentB) {
       setComparisonDocs({ ...comparisonDocs, documentB: result });
       toast.success("Documentos prontos para comparação", {
         description: "Clique no ícone de comparação para ver os resultados.",
       });
-    } else {
-      setComparisonDocs({ ...comparisonDocs, documentA: result });
-      toast.info("Documento substituído", {
-        description: "Selecione mais um documento para comparar.",
-      });
+      return;
     }
+    
+    // Se ambos já estão selecionados, substitua documentA
+    setComparisonDocs({ ...comparisonDocs, documentA: result });
+    toast.info("Documento substituído", {
+      description: "O primeiro documento foi substituído.",
+    });
   };
 
   const handleSelectComparisonDocument = (position: 'A' | 'B', document: SearchResult | null) => {
     if (position === 'A') {
       setComparisonDocs({ ...comparisonDocs, documentA: document });
+      if (document === null) {
+        toast.info("Documento A removido da comparação");
+      }
     } else {
       setComparisonDocs({ ...comparisonDocs, documentB: document });
+      if (document === null) {
+        toast.info("Documento B removido da comparação");
+      }
     }
   };
 
@@ -299,6 +327,7 @@ const Index = () => {
                         result={result} 
                         index={index}
                         onCompare={handleCompareDocument}
+                        isSelectedForComparison={isSelectedForComparison(result)}
                       />
                     ))
                   ) : (

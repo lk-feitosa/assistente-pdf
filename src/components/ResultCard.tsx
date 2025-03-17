@@ -10,12 +10,15 @@ interface ResultCardProps {
   result: SearchResult;
   index: number;
   onCompare?: (result: SearchResult) => void;
+  isSelectedForComparison?: boolean;
 }
 
-const ResultCard = ({ result, index, onCompare }: ResultCardProps) => {
-  // Verificar se este resultado já está selecionado para comparação
-  const isSelectedForComparison = false; // Este estado viria do componente pai
-
+const ResultCard = ({ 
+  result, 
+  index, 
+  onCompare, 
+  isSelectedForComparison = false 
+}: ResultCardProps) => {
   return (
     <Card 
       className="glass-card overflow-hidden animate-slide-up transition-all duration-300 hover:shadow-lg"
@@ -67,13 +70,24 @@ const ResultCard = ({ result, index, onCompare }: ResultCardProps) => {
         <div className="flex gap-2">
           {onCompare && (
             <Button
-              variant="ghost"
+              variant={isSelectedForComparison ? "default" : "ghost"}
               size="sm"
-              className="bg-white hover:bg-secondary transition-colors"
+              className={isSelectedForComparison 
+                ? "bg-primary hover:bg-primary/90 text-primary-foreground transition-colors" 
+                : "bg-white hover:bg-secondary transition-colors"}
               onClick={() => onCompare(result)}
             >
-              <GitCompare className="h-4 w-4 mr-1" />
-              <span>Comparar</span>
+              {isSelectedForComparison ? (
+                <>
+                  <Check className="h-4 w-4 mr-1" />
+                  <span>Selecionado</span>
+                </>
+              ) : (
+                <>
+                  <GitCompare className="h-4 w-4 mr-1" />
+                  <span>Comparar</span>
+                </>
+              )}
             </Button>
           )}
           

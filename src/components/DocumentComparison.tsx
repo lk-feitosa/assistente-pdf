@@ -11,7 +11,7 @@ import { toast } from "sonner";
 interface DocumentComparisonProps {
   documentA: SearchResult | null;
   documentB: SearchResult | null;
-  onSelectDocument: (position: 'A' | 'B', document: SearchResult) => void;
+  onSelectDocument: (position: 'A' | 'B', document: SearchResult | null) => void;
 }
 
 const DocumentComparison = ({ documentA, documentB, onSelectDocument }: DocumentComparisonProps) => {
@@ -83,7 +83,7 @@ const DocumentComparison = ({ documentA, documentB, onSelectDocument }: Document
             variant="ghost" 
             size="sm" 
             className="h-6 text-xs text-destructive"
-            onClick={() => onSelectDocument(position, null as any)}
+            onClick={() => onSelectDocument(position, null)}
           >
             Remover
           </Button>
@@ -129,9 +129,9 @@ const DocumentComparison = ({ documentA, documentB, onSelectDocument }: Document
             size="icon" 
             className={`h-10 w-10 rounded-full ${selectedCount > 0 ? 'bg-primary/20 hover:bg-primary/30' : 'bg-background/80 hover:bg-background'}`}
             onClick={() => {
-              if (selectedCount === 1) {
-                toast.info("Selecione mais um documento para comparar", {
-                  description: "Você precisa selecionar dois documentos para fazer a comparação."
+              if (selectedCount === 0) {
+                toast.info("Selecione documentos para comparar", {
+                  description: "Você precisa selecionar documentos para fazer a comparação."
                 });
               }
             }}
