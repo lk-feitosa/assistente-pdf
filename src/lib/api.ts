@@ -22,9 +22,10 @@ export interface SearchResponse {
 const GOOGLE_API_KEY = "AIzaSyAJ1nzSI9m5GirYOZTnlBXil_a0jpRv3uQ";
 const GOOGLE_CX = "507a85d94e90d4cef";
 const RESULTS_PER_PAGE = 5;
+const MAX_PAGES = 50; // Limita a busca a no máximo 50 páginas
 
-// Função auxiliar para garantir que a consulta comece com "Lei"
-function ensureLawPrefix(query: string):  string {
+// Função auxiliar para garantir que a consulta comece com termos jurídicos
+function ensureLawPrefix(query: string): string {
   const legalKeywords = [
     "lei", "código", "regulamento", "norma", "direito", "portaria",
     "decreto", "constituição", "jurídico", "justiça", "processo", "legislação",
@@ -43,7 +44,7 @@ export async function searchLegalText(query: string, page: number = 1): Promise<
   try {
     console.log(`Pesquisando: "${query}" (Página ${page})`);
     
-    // Garantindo que a consulta comece com "Lei"
+    // Garantindo que a consulta comece com "Lei" ou outro termo jurídico
     const formattedQuery = ensureLawPrefix(query);
     
     // Calcular índice inicial baseado na página
@@ -88,8 +89,15 @@ export async function searchLegalText(query: string, page: number = 1): Promise<
     }));
     
     // Calcular o número total de páginas a partir do resultado
-    const totalResults = data.searchInformation?.totalResults ? parseInt(data.searchInformation.totalResults) : results.length;
-    const totalPages = Math.ceil(totalResults / RESULTS_PER_PAGE);
+    let totalResults = data.searchInformation?.totalResults ? parseInt(data.searchInformation.totalResults) : results.length;
+    
+    // Limitar o número total de páginas a 50
+    let totalPages = Math.min(MAX_PAGES, Math.ceil(totalResults / RESULTS_PER_PAGE));
+    
+    // Se tivermos mais de 50 páginas, ajustar o total de resultados para refletir isso
+    if (totalPages === MAX_PAGES) {
+      totalResults = MAX_PAGES * RESULTS_PER_PAGE;
+    }
     
     console.log(`Encontrados ${results.length} resultados (página ${page} de ${totalPages})`);
     
@@ -117,7 +125,7 @@ export async function searchLegalText(query: string, page: number = 1): Promise<
   }
 }
 
-// PDF analysis function - Ainda usando dados mock, já que precisaríamos de um backend real para processar os PDFs
+// PDF analysis function - Simulando com base no nome do arquivo PDF
 export async function analyzePDF(file: File, page: number = 1): Promise<SearchResponse> {
   try {
     toast.info("Analisando arquivo...", {
@@ -158,7 +166,8 @@ export async function analyzePDF(file: File, page: number = 1): Promise<SearchRe
       results,
       totalResults: textResults.totalResults,
       page,
-      totalPages: textResults.totalPages
+      // Também aplicamos o limite de 50 páginas aqui
+      totalPages: Math.min(MAX_PAGES, textResults.totalPages),
     };
     
   } catch (error) {

@@ -22,9 +22,10 @@ const SearchBar = ({ onSearch, isLoading }: SearchBarProps) => {
     }
     
     // Sugestão para iniciar com "Lei", similar ao bot do WhatsApp
-    if (!query.toLowerCase().includes("lei") && 
-        !query.toLowerCase().includes("código") && 
-        !query.toLowerCase().includes("decreto")) {
+    const legalKeywords = ["lei", "código", "decreto", "regulamento", "norma", "portaria", "resolução"];
+    const firstWord = query.toLowerCase().trim().split(" ")[0];
+    
+    if (!legalKeywords.includes(firstWord)) {
       toast.info("Dica: Comece sua pesquisa com a palavra 'Lei'", {
         description: "Exemplo: Lei sobre meio ambiente"
       });

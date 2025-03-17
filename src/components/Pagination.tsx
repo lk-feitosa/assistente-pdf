@@ -38,7 +38,7 @@ const Pagination = ({ currentPage, totalPages, onPageChange }: PaginationProps) 
       pageNumbers.push('...');
     }
     
-    // Always show last page
+    // Always show last page if not first page
     if (totalPages > 1) {
       pageNumbers.push(totalPages);
     }
