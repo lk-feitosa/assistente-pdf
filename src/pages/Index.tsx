@@ -7,8 +7,11 @@ import ResultCard from "@/components/ResultCard";
 import Pagination from "@/components/Pagination";
 import LoadingState from "@/components/LoadingState";
 import ErrorAlert from "@/components/ErrorAlert";
+import CategoryFilter from "@/components/CategoryFilter";
+import SearchHistory from "@/components/SearchHistory";
+import DocumentComparison from "@/components/DocumentComparison";
 import { searchLegalText, analyzePDF, SearchResponse, SearchResult } from "@/lib/api";
-import { Scale, FileText, ChevronLeft, AlertCircle } from "lucide-react";
+import { Scale, FileText, ChevronLeft, AlertCircle, Filter } from "lucide-react";
 
 const Index = () => {
   const [searchResults, setSearchResults] = useState<SearchResponse | null>(null);
@@ -17,6 +20,11 @@ const Index = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [currentQuery, setCurrentQuery] = useState("");
   const [currentFile, setCurrentFile] = useState<File | null>(null);
+  const [selectedCategory, setSelectedCategory] = useState("Todos");
+  const [comparisonDocs, setComparisonDocs] = useState<{
+    documentA: SearchResult | null;
+    documentB: SearchResult | null;
+  }>({ documentA: null, documentB: null });
   const [error, setError] = useState<{title: string, description: string} | null>(null);
   
   // Reset error state
@@ -28,6 +36,7 @@ const Index = () => {
     setSearchMode('text');
     setCurrentQuery(query);
     setCurrentPage(1);
+    setSelectedCategory("Todos");
     clearError();
     
     try {
@@ -58,6 +67,7 @@ const Index = () => {
     setSearchMode('pdf');
     setCurrentFile(file);
     setCurrentPage(1);
+    setSelectedCategory("Todos");
     clearError();
     
     try {
@@ -91,7 +101,7 @@ const Index = () => {
     try {
       let results;
       if (searchMode === 'text' && currentQuery) {
-        results = await searchLegalText(currentQuery, page);
+        results = await searchLegalText(currentQuery, page, selectedCategory !== "Todos" ? selectedCategory : undefined);
       } else if (searchMode === 'pdf' && currentFile) {
         results = await analyzePDF(currentFile, page);
       }
@@ -110,6 +120,61 @@ const Index = () => {
     }
   };
 
+  // Handle category filter
+  const handleCategoryChange = async (category: string) => {
+    setIsLoading(true);
+    setSelectedCategory(category);
+    setCurrentPage(1);
+    clearError();
+    
+    try {
+      if (searchMode === 'text' && currentQuery) {
+        const results = await searchLegalText(
+          currentQuery, 
+          1, 
+          category !== "Todos" ? category : undefined
+        );
+        setSearchResults(results);
+        
+        if (results.totalResults === 0) {
+          setError({
+            title: "Nenhum resultado encontrado nesta categoria",
+            description: `Não encontramos resultados para "${currentQuery}" na categoria "${category}".`
+          });
+        }
+      }
+    } catch (error) {
+      console.error("Category filter error:", error);
+      setError({
+        title: "Erro ao filtrar por categoria",
+        description: "Não foi possível aplicar o filtro. Por favor, tente novamente."
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Handle document comparison
+  const handleCompareDocument = (result: SearchResult) => {
+    if (!comparisonDocs.documentA) {
+      setComparisonDocs({ ...comparisonDocs, documentA: result });
+    } else if (!comparisonDocs.documentB) {
+      setComparisonDocs({ ...comparisonDocs, documentB: result });
+    } else {
+      // Se ambos já estão preenchidos, substitui o primeiro
+      setComparisonDocs({ ...comparisonDocs, documentA: result });
+    }
+  };
+
+  // Update comparison document
+  const handleSelectComparisonDocument = (position: 'A' | 'B', document: SearchResult | null) => {
+    if (position === 'A') {
+      setComparisonDocs({ ...comparisonDocs, documentA: document });
+    } else {
+      setComparisonDocs({ ...comparisonDocs, documentB: document });
+    }
+  };
+
   // Reset to search form
   const handleReset = () => {
     setSearchResults(null);
@@ -117,6 +182,7 @@ const Index = () => {
     setCurrentQuery("");
     setCurrentFile(null);
     setCurrentPage(1);
+    setSelectedCategory("Todos");
     clearError();
   };
 
@@ -188,23 +254,43 @@ const Index = () => {
                 />
               )}
               
+              <div className="flex items-center justify-end gap-2 mb-2">
+                <SearchHistory onSelectQuery={handleSearch} />
+              </div>
+              
               <SearchBar onSearch={handleSearch} isLoading={isLoading} />
               <FileUpload onFileSelect={handleFileAnalysis} isLoading={isLoading} />
             </div>
           ) : (
             <div className="mt-6">
               {/* Results header with search info */}
-              <div className="mb-6 text-center">
-                <h2 className="text-lg font-medium">
-                  {searchMode === 'text' ? (
-                    <>Resultados para: <span className="text-primary">"{currentQuery}"</span></>
-                  ) : (
-                    <>Análise do documento: <span className="text-primary">{currentFile?.name}</span></>
-                  )}
-                </h2>
+              <div className="mb-6">
+                <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
+                  <h2 className="text-lg font-medium">
+                    {searchMode === 'text' ? (
+                      <>Resultados para: <span className="text-primary">"{currentQuery}"</span></>
+                    ) : (
+                      <>Análise do documento: <span className="text-primary">{currentFile?.name}</span></>
+                    )}
+                  </h2>
+                  
+                  <div className="flex items-center gap-2">
+                    <CategoryFilter 
+                      selectedCategory={selectedCategory} 
+                      onChange={handleCategoryChange} 
+                    />
+                    <SearchHistory onSelectQuery={handleSearch} />
+                    <DocumentComparison 
+                      documentA={comparisonDocs.documentA} 
+                      documentB={comparisonDocs.documentB}
+                      onSelectDocument={handleSelectComparisonDocument}
+                    />
+                  </div>
+                </div>
                 
-                <p className="text-sm text-muted-foreground mt-1">
+                <p className="text-sm text-muted-foreground">
                   {searchResults.totalResults} resultados encontrados
+                  {selectedCategory !== "Todos" && ` na categoria "${selectedCategory}"`}
                 </p>
               </div>
               
@@ -215,7 +301,12 @@ const Index = () => {
                 <div className="space-y-4">
                   {searchResults.results.length > 0 ? (
                     searchResults.results.map((result, index) => (
-                      <ResultCard key={result.id} result={result} index={index} />
+                      <ResultCard 
+                        key={result.id} 
+                        result={result} 
+                        index={index}
+                        onCompare={handleCompareDocument}
+                      />
                     ))
                   ) : (
                     <div className="text-center py-8">
