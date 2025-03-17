@@ -1,6 +1,6 @@
-
 import { useState } from "react";
 import { Toaster } from "@/components/ui/sonner";
+import { toast } from "sonner";
 import SearchBar from "@/components/SearchBar";
 import FileUpload from "@/components/FileUpload";
 import ResultCard from "@/components/ResultCard";
@@ -27,10 +27,8 @@ const Index = () => {
   }>({ documentA: null, documentB: null });
   const [error, setError] = useState<{title: string, description: string} | null>(null);
   
-  // Reset error state
   const clearError = () => setError(null);
 
-  // Handle text search
   const handleSearch = async (query: string) => {
     setIsLoading(true);
     setSearchMode('text');
@@ -43,7 +41,6 @@ const Index = () => {
       const results = await searchLegalText(query, 1);
       setSearchResults(results);
       
-      // Se não encontrou resultados, mostrar mensagem amigável
       if (results.totalResults === 0) {
         setError({
           title: "Nenhum resultado encontrado",
@@ -61,7 +58,6 @@ const Index = () => {
     }
   };
 
-  // Handle PDF analysis
   const handleFileAnalysis = async (file: File) => {
     setIsLoading(true);
     setSearchMode('pdf');
@@ -74,7 +70,6 @@ const Index = () => {
       const results = await analyzePDF(file, 1);
       setSearchResults(results);
       
-      // Se não encontrou resultados, mostrar mensagem amigável
       if (results.totalResults === 0) {
         setError({
           title: "Nenhuma correspondência encontrada",
@@ -92,7 +87,6 @@ const Index = () => {
     }
   };
 
-  // Handle pagination
   const handlePageChange = async (page: number) => {
     setIsLoading(true);
     setCurrentPage(page);
@@ -120,7 +114,6 @@ const Index = () => {
     }
   };
 
-  // Handle category filter
   const handleCategoryChange = async (category: string) => {
     setIsLoading(true);
     setSelectedCategory(category);
@@ -154,19 +147,25 @@ const Index = () => {
     }
   };
 
-  // Handle document comparison
   const handleCompareDocument = (result: SearchResult) => {
     if (!comparisonDocs.documentA) {
       setComparisonDocs({ ...comparisonDocs, documentA: result });
+      toast.info("Primeiro documento selecionado", {
+        description: "Selecione mais um documento para comparar.",
+      });
     } else if (!comparisonDocs.documentB) {
       setComparisonDocs({ ...comparisonDocs, documentB: result });
+      toast.success("Documentos prontos para comparação", {
+        description: "Clique no ícone de comparação para ver os resultados.",
+      });
     } else {
-      // Se ambos já estão preenchidos, substitui o primeiro
       setComparisonDocs({ ...comparisonDocs, documentA: result });
+      toast.info("Documento substituído", {
+        description: "Selecione mais um documento para comparar.",
+      });
     }
   };
 
-  // Update comparison document
   const handleSelectComparisonDocument = (position: 'A' | 'B', document: SearchResult | null) => {
     if (position === 'A') {
       setComparisonDocs({ ...comparisonDocs, documentA: document });
@@ -175,7 +174,11 @@ const Index = () => {
     }
   };
 
-  // Reset to search form
+  const isSelectedForComparison = (result: SearchResult) => {
+    return (comparisonDocs.documentA?.id === result.id || 
+            comparisonDocs.documentB?.id === result.id);
+  };
+
   const handleReset = () => {
     setSearchResults(null);
     setSearchMode(null);
@@ -186,7 +189,6 @@ const Index = () => {
     clearError();
   };
 
-  // Retry current search
   const handleRetry = () => {
     if (searchMode === 'text' && currentQuery) {
       handleSearch(currentQuery);
@@ -215,9 +217,7 @@ const Index = () => {
       </header>
       
       <main className="w-full max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Search/Results container with glass effect */}
         <div className="glass-card rounded-2xl p-6 sm:p-8 shadow-xl w-full relative overflow-hidden">
-          {/* Back button when showing results */}
           {searchResults && (
             <button
               onClick={handleReset}
@@ -227,7 +227,6 @@ const Index = () => {
             </button>
           )}
           
-          {/* Error message - display at the top when we have results but with errors */}
           {error && searchResults && (
             <ErrorAlert 
               title={error.title} 
@@ -236,7 +235,6 @@ const Index = () => {
             />
           )}
           
-          {/* Search form when no results or loading */}
           {!searchResults ? (
             <div className="space-y-8">
               <div className="flex items-center justify-center">
@@ -245,7 +243,6 @@ const Index = () => {
                 </div>
               </div>
               
-              {/* Mostrar erro de forma mais proeminente quando não temos resultados */}
               {error && (
                 <ErrorAlert 
                   title={error.title} 
@@ -263,38 +260,34 @@ const Index = () => {
             </div>
           ) : (
             <div className="mt-6">
-              {/* Results header with search info */}
-              <div className="mb-6">
-                <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
-                  <h2 className="text-lg font-medium">
-                    {searchMode === 'text' ? (
-                      <>Resultados para: <span className="text-primary">"{currentQuery}"</span></>
-                    ) : (
-                      <>Análise do documento: <span className="text-primary">{currentFile?.name}</span></>
-                    )}
-                  </h2>
-                  
-                  <div className="flex items-center gap-2">
-                    <CategoryFilter 
-                      selectedCategory={selectedCategory} 
-                      onChange={handleCategoryChange} 
-                    />
-                    <SearchHistory onSelectQuery={handleSearch} />
-                    <DocumentComparison 
-                      documentA={comparisonDocs.documentA} 
-                      documentB={comparisonDocs.documentB}
-                      onSelectDocument={handleSelectComparisonDocument}
-                    />
-                  </div>
-                </div>
+              <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
+                <h2 className="text-lg font-medium">
+                  {searchMode === 'text' ? (
+                    <>Resultados para: <span className="text-primary">"{currentQuery}"</span></>
+                  ) : (
+                    <>Análise do documento: <span className="text-primary">{currentFile?.name}</span></>
+                  )}
+                </h2>
                 
-                <p className="text-sm text-muted-foreground">
-                  {searchResults.totalResults} resultados encontrados
-                  {selectedCategory !== "Todos" && ` na categoria "${selectedCategory}"`}
-                </p>
+                <div className="flex items-center gap-2">
+                  <CategoryFilter 
+                    selectedCategory={selectedCategory} 
+                    onChange={handleCategoryChange} 
+                  />
+                  <SearchHistory onSelectQuery={handleSearch} />
+                  <DocumentComparison 
+                    documentA={comparisonDocs.documentA} 
+                    documentB={comparisonDocs.documentB}
+                    onSelectDocument={handleSelectComparisonDocument}
+                  />
+                </div>
               </div>
               
-              {/* Loading state or results */}
+              <p className="text-sm text-muted-foreground">
+                {searchResults.totalResults} resultados encontrados
+                {selectedCategory !== "Todos" && ` na categoria "${selectedCategory}"`}
+              </p>
+              
               {isLoading ? (
                 <LoadingState isPdfMode={searchMode === 'pdf'} />
               ) : (
@@ -320,7 +313,6 @@ const Index = () => {
                 </div>
               )}
               
-              {/* Pagination */}
               {searchResults.totalPages > 1 && (
                 <Pagination
                   currentPage={currentPage}

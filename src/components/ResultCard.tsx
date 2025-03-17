@@ -3,7 +3,7 @@ import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { SearchResult } from "@/lib/api";
-import { ExternalLink, GitCompare } from "lucide-react";
+import { ExternalLink, GitCompare, Check } from "lucide-react";
 import ResultFeedback from "./ResultFeedback";
 
 interface ResultCardProps {
@@ -13,6 +13,9 @@ interface ResultCardProps {
 }
 
 const ResultCard = ({ result, index, onCompare }: ResultCardProps) => {
+  // Verificar se este resultado já está selecionado para comparação
+  const isSelectedForComparison = false; // Este estado viria do componente pai
+
   return (
     <Card 
       className="glass-card overflow-hidden animate-slide-up transition-all duration-300 hover:shadow-lg"
