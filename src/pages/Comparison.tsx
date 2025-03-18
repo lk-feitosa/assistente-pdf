@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { compareDocuments, SearchResult } from "@/lib/api";
 import { Progress } from "@/components/ui/progress";
-import { ArrowLeft, FileText, CheckCircle2, XCircle, AlertTriangle } from "lucide-react";
+import { ArrowLeft, FileText, CheckCircle2, XCircle, AlertTriangle, Scale, Home } from "lucide-react";
 
 const Comparison = () => {
   const location = useLocation();
@@ -19,9 +19,9 @@ const Comparison = () => {
   const documentB = location.state?.documentB as SearchResult | null;
 
   useEffect(() => {
-    // Verificar se temos dois documentos para comparar
-    if (!documentA || !documentB) {
-      setError("Documentos inválidos para comparação");
+    // Verificar se temos pelo menos um documento para comparar
+    if (!documentA) {
+      setError("Nenhum documento selecionado para comparação");
       return;
     }
 
@@ -29,8 +29,17 @@ const Comparison = () => {
     const performComparison = async () => {
       setComparing(true);
       try {
-        const result = await compareDocuments(documentA.id, documentB.id);
-        setComparisonResult(result);
+        // Se temos dois documentos, comparamos eles entre si
+        // Se temos apenas um, simulamos a comparação com um documento de referência
+        if (documentA && documentB) {
+          const result = await compareDocuments(documentA.id, documentB.id);
+          setComparisonResult(result);
+        } else if (documentA) {
+          // Simulação de comparação com documento único (análise)
+          // Na implementação real, isso seria feito contra uma base de documentos padrão
+          const result = await compareDocuments(documentA.id, "referenceDoc");
+          setComparisonResult(result);
+        }
       } catch (error) {
         console.error("Erro ao comparar documentos:", error);
         setError("Ocorreu um erro ao comparar os documentos");
@@ -44,7 +53,18 @@ const Comparison = () => {
 
   // Renderizar documento
   const renderDocument = (doc: SearchResult | null, position: string) => {
-    if (!doc) return null;
+    if (!doc) {
+      if (position === "B") {
+        return (
+          <div className="border border-border rounded-lg p-4 bg-background/80 flex items-center justify-center h-full">
+            <p className="text-muted-foreground text-center p-6">
+              Documento de referência para análise jurídica
+            </p>
+          </div>
+        );
+      }
+      return null;
+    }
 
     return (
       <div className="border border-border rounded-lg p-4 bg-background/80">
@@ -81,24 +101,31 @@ const Comparison = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-white to-blue-50 pb-24">
-      <header className="w-full max-w-7xl mx-auto pt-8 pb-6 px-4 sm:px-6">
+      <header className="w-full max-w-7xl mx-auto pt-6 pb-6 px-4 sm:px-6 flex justify-between items-center">
         <Button 
           variant="ghost" 
-          className="mb-4" 
+          className="flex items-center gap-2" 
           onClick={() => navigate(-1)}
         >
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          Voltar aos resultados
+          <ArrowLeft className="h-4 w-4" />
+          <span>Voltar</span>
         </Button>
         
+        <Link to="/" className="inline-flex items-center justify-center bg-primary/5 rounded-full px-4 py-2 hover:bg-primary/10 transition-colors">
+          <Scale className="h-5 w-5 text-primary mr-2" />
+          <span className="text-sm font-medium text-primary">Assistente Inteligente PDF</span>
+        </Link>
+      </header>
+      
+      <div className="w-full max-w-7xl mx-auto px-4 sm:px-6">
         <h1 className="text-2xl sm:text-3xl font-medium tracking-tight text-foreground mb-2">
-          Comparação de Documentos Legais
+          Análise Comparativa de Documentos Legais
         </h1>
         
-        <p className="text-muted-foreground">
-          Análise detalhada das similaridades e diferenças entre documentos jurídicos
+        <p className="text-muted-foreground mb-8">
+          Detalhamento das similaridades e diferenças entre documentos jurídicos
         </p>
-      </header>
+      </div>
       
       <main className="w-full max-w-5xl mx-auto px-4 sm:px-6 space-y-6">
         {error ? (
@@ -123,7 +150,9 @@ const Comparison = () => {
               </div>
               
               <div>
-                <h2 className="text-lg font-medium mb-3">Documento B</h2>
+                <h2 className="text-lg font-medium mb-3">
+                  {documentB ? "Documento B" : "Referência"}
+                </h2>
                 {renderDocument(documentB, "B")}
               </div>
             </div>
@@ -191,11 +220,34 @@ const Comparison = () => {
                 
                 <div className="mt-8 pt-6 border-t border-border">
                   <h3 className="text-lg font-medium mb-3">Análise Jurídica</h3>
-                  <p className="text-muted-foreground">
+                  <p className="text-muted-foreground mb-4">
                     Os documentos apresentam {comparisonResult.similarity}% de similaridade em seu conteúdo e estrutura. 
                     As principais concordâncias estão relacionadas aos princípios fundamentais e aplicabilidade, 
                     enquanto as diferenças mais significativas encontram-se na abrangência jurisdicional e sanções previstas.
                   </p>
+                  
+                  <h4 className="font-medium mt-4 mb-2">Sugestões</h4>
+                  <ul className="space-y-2 text-muted-foreground">
+                    <li className="flex items-start">
+                      <span className="h-4 w-4 text-primary mt-0.5 mr-2 flex-shrink-0">•</span>
+                      <span>Recomenda-se atenção especial às diferenças de abrangência jurisdicional entre os documentos.</span>
+                    </li>
+                    <li className="flex items-start">
+                      <span className="h-4 w-4 text-primary mt-0.5 mr-2 flex-shrink-0">•</span>
+                      <span>As sanções previstas em cada documento possuem naturezas distintas que podem impactar diferentemente os casos analisados.</span>
+                    </li>
+                    <li className="flex items-start">
+                      <span className="h-4 w-4 text-primary mt-0.5 mr-2 flex-shrink-0">•</span>
+                      <span>Os prazos estipulados diferem significativamente, o que pode afetar o planejamento de ações jurídicas.</span>
+                    </li>
+                  </ul>
+                </div>
+                
+                <div className="flex justify-center mt-8">
+                  <Button onClick={() => navigate(-1)}>
+                    <ArrowLeft className="h-4 w-4 mr-2" />
+                    Voltar aos resultados
+                  </Button>
                 </div>
               </div>
             ) : null}

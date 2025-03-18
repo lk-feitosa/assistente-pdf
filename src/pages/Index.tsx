@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate, Link } from "react-router-dom";
 import { Toaster } from "@/components/ui/sonner";
 import { toast } from "sonner";
 import SearchBar from "@/components/SearchBar";
@@ -11,9 +12,10 @@ import CategoryFilter from "@/components/CategoryFilter";
 import SearchHistory from "@/components/SearchHistory";
 import DocumentComparison from "@/components/DocumentComparison";
 import { searchLegalText, analyzePDF, SearchResponse, SearchResult } from "@/lib/api";
-import { Scale, FileText, ChevronLeft, AlertCircle } from "lucide-react";
+import { Scale, FileText, ChevronLeft, AlertCircle, Home } from "lucide-react";
 
 const Index = () => {
+  const navigate = useNavigate();
   const [searchResults, setSearchResults] = useState<SearchResponse | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [searchMode, setSearchMode] = useState<'text' | 'pdf' | null>(null);
@@ -160,10 +162,18 @@ const Index = () => {
       return;
     }
     
+    if (searchMode === 'pdf') {
+      setComparisonDocs({ ...comparisonDocs, documentA: result });
+      toast.info("Documento selecionado para comparação", {
+        description: "Clique no botão de comparação para ver os resultados.",
+      });
+      return;
+    }
+    
     if (!comparisonDocs.documentA) {
       setComparisonDocs({ ...comparisonDocs, documentA: result });
       toast.info("Primeiro documento selecionado", {
-        description: "Selecione mais um documento para comparar.",
+        description: "Selecione mais um documento para comparação completa.",
       });
       return;
     }
@@ -176,23 +186,17 @@ const Index = () => {
       return;
     }
     
-    setComparisonDocs({ ...comparisonDocs, documentA: result });
-    toast.info("Documento substituído", {
-      description: "O primeiro documento foi substituído.",
-    });
+    setComparisonDocs({ documentA: result, documentB: comparisonDocs.documentB });
+    toast.info("Primeiro documento substituído");
   };
 
   const handleSelectComparisonDocument = (position: 'A' | 'B', document: SearchResult | null) => {
     if (position === 'A') {
       setComparisonDocs({ ...comparisonDocs, documentA: document });
-      if (document === null) {
-        toast.info("Documento A removido da comparação");
-      }
+      if (document === null) toast.info("Documento removido da comparação");
     } else {
       setComparisonDocs({ ...comparisonDocs, documentB: document });
-      if (document === null) {
-        toast.info("Documento B removido da comparação");
-      }
+      if (document === null) toast.info("Documento removido da comparação");
     }
   };
 
@@ -221,15 +225,10 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-white to-blue-50 pb-24">
-      <Toaster position="top-center" />
+      <Toaster position="bottom-center" />
       
-      <header className="w-full max-w-7xl mx-auto pt-12 pb-8 px-4 sm:px-6 lg:px-8 text-center">
-        <div className="inline-flex items-center justify-center bg-primary/5 rounded-full px-4 py-2 mb-4">
-          <Scale className="h-5 w-5 text-primary mr-2" />
-          <span className="text-sm font-medium text-primary">Assistente Inteligente PDF</span>
-        </div>
-        
-        <h1 className="text-3xl sm:text-4xl md:text-5xl font-medium tracking-tight text-foreground">
+      <header className="w-full max-w-7xl mx-auto pt-3 pb-8 px-4 sm:px-6 lg:px-8 text-center">
+        <h1 className="text-3xl sm:text-4xl md:text-5xl font-medium tracking-tight text-foreground mt-4">
           Pesquisa Jurídica Inteligente
         </h1>
         
