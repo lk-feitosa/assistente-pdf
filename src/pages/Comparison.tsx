@@ -7,8 +7,9 @@ import { compareDocuments, SearchResult } from "@/lib/api";
 import { Progress } from "@/components/ui/progress";
 import { 
   ArrowLeft, FileText, CheckCircle2, XCircle, 
-  AlertTriangle, Scale, Home, File
+  AlertTriangle, Scale, File, ChevronLeft
 } from "lucide-react";
+import { useScrollPosition } from "@/hooks/useScrollPosition";
 
 const Comparison = () => {
   const location = useLocation();
@@ -16,36 +17,49 @@ const Comparison = () => {
   const [comparing, setComparing] = useState(false);
   const [comparisonResult, setComparisonResult] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
+  const scrollPosition = useScrollPosition();
 
-  // Obter documentos do estado de navegação
+  // Get documents from navigation state
   const documentA = location.state?.documentA as SearchResult | null;
   const documentB = location.state?.documentB as SearchResult | null;
   const isPdfMode = location.state?.isPdfMode as boolean;
+  const selectedDocuments = location.state?.selectedDocuments as SearchResult[] || [];
+  
+  // PDF filename for PDF mode
+  const pdfFilename = location.state?.pdfFilename as string || "Documento PDF";
+
+  // Minify header on scroll
+  const isMinified = scrollPosition > 50;
 
   useEffect(() => {
-    // Verificar se temos documentos adequados para comparação
-    if (!documentA) {
+    // Check if we have adequate documents for comparison
+    if (!documentA && selectedDocuments.length === 0) {
       setError("Nenhum documento selecionado para comparação");
       return;
     }
 
-    if (!isPdfMode && !documentB) {
+    if (!isPdfMode && (!documentA || !documentB)) {
       setError("É necessário selecionar dois documentos para comparação no modo pesquisa");
       return;
     }
 
-    // Realizar a comparação automaticamente quando a página carrega
+    // Perform comparison automatically when the page loads
     const performComparison = async () => {
       setComparing(true);
       try {
-        // Se temos dois documentos, comparamos eles entre si
-        // Se temos apenas um (modo PDF), simulamos a comparação com um documento de referência
-        if (documentA && documentB) {
+        // If using selectedDocuments array (multiple documents in PDF mode)
+        if (selectedDocuments.length > 0) {
+          // Use first document as reference
+          const result = await compareDocuments(selectedDocuments[0].id, "referenceDoc");
+          setComparisonResult(result);
+        }
+        // If we have two documents, compare them to each other
+        else if (documentA && documentB) {
           const result = await compareDocuments(documentA.id, documentB.id);
           setComparisonResult(result);
-        } else if (documentA && isPdfMode) {
-          // Simulação de comparação com documento único (análise)
-          // Na implementação real, isso seria feito contra uma base de documentos padrão
+        } 
+        // If we have just one document (PDF mode), simulate comparison with a reference document
+        else if (documentA && isPdfMode) {
           const result = await compareDocuments(documentA.id, "referenceDoc");
           setComparisonResult(result);
         }
@@ -58,12 +72,12 @@ const Comparison = () => {
     };
 
     performComparison();
-  }, [documentA, documentB, isPdfMode]);
+  }, [documentA, documentB, isPdfMode, selectedDocuments]);
 
-  // Renderizar documento na página de comparação
+  // Render document in comparison page
   const renderDocument = (doc: SearchResult | null, position: string) => {
     if (!doc) {
-      // Se estamos no modo PDF e não temos documentoB, mostramos o bloco de referência
+      // For PDF mode where we don't have a documentB (right side), show reference block
       if (position === "B" && isPdfMode) {
         return (
           <div className="border border-border rounded-lg p-4 bg-background/80 h-full">
@@ -77,6 +91,27 @@ const Comparison = () => {
           </div>
         );
       }
+      
+      // For PDF mode where we are showing the user's PDF on left side
+      if (position === "A" && isPdfMode) {
+        return (
+          <div className="border border-border rounded-lg p-4 bg-background/80 h-full">
+            <h3 className="font-medium text-lg mb-2">Seu documento PDF</h3>
+            <p className="text-sm text-muted-foreground mb-4">
+              {pdfFilename || "Documento enviado para análise comparativa"}
+            </p>
+            <div className="mt-3 mb-4">
+              <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
+                Seu PDF em análise
+              </span>
+            </div>
+            <div className="flex items-center justify-center p-6">
+              <FileText className="h-16 w-16 text-primary/30" />
+            </div>
+          </div>
+        );
+      }
+      
       return null;
     }
 
@@ -121,25 +156,41 @@ const Comparison = () => {
     );
   };
 
-  return (
-    <div className="min-h-screen bg-gradient-to-b from-white to-blue-50 pb-24">
-      <header className="w-full max-w-7xl mx-auto pt-6 pb-6 px-4 sm:px-6 flex justify-between items-center">
+  // Dynamic header that collapses when scrolling
+  const renderHeader = () => (
+    <header className="fixed top-0 w-full bg-white/95 backdrop-blur-sm z-50 transition-all duration-300 shadow-sm">
+      <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 flex justify-between items-center">
         <Button 
           variant="ghost" 
           className="flex items-center gap-2" 
           onClick={() => navigate(-1)}
         >
-          <ArrowLeft className="h-4 w-4" />
-          <span>Voltar</span>
+          <ChevronLeft className="h-4 w-4" />
+          <span className={isMinified ? "sr-only" : ""}>Voltar</span>
         </Button>
         
-        <Link to="/" className="inline-flex items-center justify-center bg-primary/5 rounded-full px-4 py-2 hover:bg-primary/10 transition-colors">
-          <Scale className="h-5 w-5 text-primary mr-2" />
-          <span className="text-sm font-medium text-primary">Assistente Inteligente PDF</span>
+        <Link 
+          to="/" 
+          className={`inline-flex items-center justify-center rounded-full px-4 py-2 transition-all duration-300 ${
+            isMinified 
+              ? "bg-primary/10 p-2" 
+              : "bg-primary/5 hover:bg-primary/10"
+          }`}
+        >
+          <Scale className={`${isMinified ? "h-5 w-5" : "h-5 w-5 mr-2"} text-primary`} />
+          <span className={`text-sm font-medium text-primary ${isMinified ? "sr-only" : ""}`}>
+            Assistente Inteligente PDF
+          </span>
         </Link>
-      </header>
+      </div>
+    </header>
+  );
+
+  return (
+    <div className="min-h-screen bg-gradient-to-b from-white to-blue-50 pb-24">
+      {renderHeader()}
       
-      <div className="w-full max-w-7xl mx-auto px-4 sm:px-6">
+      <div className="w-full max-w-7xl mx-auto pt-20 pb-6 px-4 sm:px-6">
         <h1 className="text-2xl sm:text-3xl font-medium tracking-tight text-foreground mb-2">
           Análise Comparativa de Documentos Legais
         </h1>

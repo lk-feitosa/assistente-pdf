@@ -1,4 +1,5 @@
-import { useState } from "react";
+
+import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { Toaster } from "@/components/ui/sonner";
 import { toast } from "sonner";
@@ -12,10 +13,12 @@ import CategoryFilter from "@/components/CategoryFilter";
 import SearchHistory from "@/components/SearchHistory";
 import DocumentComparison from "@/components/DocumentComparison";
 import { searchLegalText, analyzePDF, SearchResponse, SearchResult } from "@/lib/api";
-import { Scale, FileText, ChevronLeft, AlertCircle, Home } from "lucide-react";
+import { Scale, FileText, ChevronLeft, AlertCircle } from "lucide-react";
+import { useScrollPosition } from "@/hooks/useScrollPosition";
 
 const Index = () => {
   const navigate = useNavigate();
+  const scrollPosition = useScrollPosition();
   const [searchResults, setSearchResults] = useState<SearchResponse | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [searchMode, setSearchMode] = useState<'text' | 'pdf' | null>(null);
@@ -23,11 +26,11 @@ const Index = () => {
   const [currentQuery, setCurrentQuery] = useState("");
   const [currentFile, setCurrentFile] = useState<File | null>(null);
   const [selectedCategory, setSelectedCategory] = useState("Todos");
-  const [comparisonDocs, setComparisonDocs] = useState<{
-    documentA: SearchResult | null;
-    documentB: SearchResult | null;
-  }>({ documentA: null, documentB: null });
+  const [selectedDocuments, setSelectedDocuments] = useState<SearchResult[]>([]);
   const [error, setError] = useState<{title: string, description: string} | null>(null);
+  
+  // Minify header on scroll
+  const isMinified = scrollPosition > 50;
   
   const clearError = () => setError(null);
 
@@ -39,7 +42,7 @@ const Index = () => {
     setSelectedCategory("Todos");
     clearError();
     
-    setComparisonDocs({ documentA: null, documentB: null });
+    setSelectedDocuments([]);
     
     try {
       const results = await searchLegalText(query, 1);
@@ -70,7 +73,7 @@ const Index = () => {
     setSelectedCategory("Todos");
     clearError();
     
-    setComparisonDocs({ documentA: null, documentB: null });
+    setSelectedDocuments([]);
     
     try {
       const results = await analyzePDF(file, 1);
@@ -154,64 +157,60 @@ const Index = () => {
   };
 
   const handleCompareDocument = (result: SearchResult) => {
-    if (searchMode === 'pdf') {
-      if (comparisonDocs.documentA?.id === result.id) {
-        setComparisonDocs({ ...comparisonDocs, documentA: null });
-        toast.info("Documento removido da comparação");
-      } else {
-        setComparisonDocs({ ...comparisonDocs, documentA: result });
-        toast.info("Documento selecionado para comparação", {
+    // Create a copy of the current selected documents
+    const newSelectedDocs = [...selectedDocuments];
+    
+    // Check if this document is already selected
+    const existingIndex = newSelectedDocs.findIndex(doc => doc.id === result.id);
+    
+    if (existingIndex >= 0) {
+      // If already selected, remove it
+      newSelectedDocs.splice(existingIndex, 1);
+      toast.info("Documento removido da comparação");
+    } else {
+      // If not selected, check mode restrictions
+      if (searchMode === 'pdf') {
+        // PDF mode: up to 3 documents
+        if (newSelectedDocs.length >= 3) {
+          toast.error("Máximo de 3 documentos atingido", {
+            description: "Remova um documento para selecionar este."
+          });
+          return;
+        }
+        
+        newSelectedDocs.push(result);
+        toast.info(`Documento ${newSelectedDocs.length} selecionado`, {
           description: "Clique no botão de comparação para ver os resultados.",
         });
+      } else {
+        // Text mode: exactly 2 documents
+        if (newSelectedDocs.length >= 2) {
+          // Replace the first document
+          newSelectedDocs[0] = result;
+          toast.info("Primeiro documento substituído");
+        } else {
+          // Add the document
+          newSelectedDocs.push(result);
+          
+          if (newSelectedDocs.length === 1) {
+            toast.info("Primeiro documento selecionado", {
+              description: "Selecione mais um documento para comparação completa.",
+            });
+          } else if (newSelectedDocs.length === 2) {
+            toast.success("Documentos prontos para comparação", {
+              description: "Clique no botão de comparação para ver os resultados.",
+            });
+          }
+        }
       }
-      return;
     }
     
-    if (comparisonDocs.documentA?.id === result.id) {
-      setComparisonDocs({ ...comparisonDocs, documentA: null });
-      toast.info("Documento removido da comparação");
-      return;
-    }
-    
-    if (comparisonDocs.documentB?.id === result.id) {
-      setComparisonDocs({ ...comparisonDocs, documentB: null });
-      toast.info("Documento removido da comparação");
-      return;
-    }
-    
-    if (!comparisonDocs.documentA) {
-      setComparisonDocs({ ...comparisonDocs, documentA: result });
-      toast.info("Primeiro documento selecionado", {
-        description: "Selecione mais um documento para comparação completa.",
-      });
-      return;
-    }
-    
-    if (!comparisonDocs.documentB) {
-      setComparisonDocs({ ...comparisonDocs, documentB: result });
-      toast.success("Documentos prontos para comparação", {
-        description: "Clique no botão de comparação para ver os resultados.",
-      });
-      return;
-    }
-    
-    setComparisonDocs({ documentA: result, documentB: comparisonDocs.documentB });
-    toast.info("Primeiro documento substituído");
-  };
-
-  const handleSelectComparisonDocument = (position: 'A' | 'B', document: SearchResult | null) => {
-    if (position === 'A') {
-      setComparisonDocs({ ...comparisonDocs, documentA: document });
-      if (document === null) toast.info("Documento removido da comparação");
-    } else {
-      setComparisonDocs({ ...comparisonDocs, documentB: document });
-      if (document === null) toast.info("Documento removido da comparação");
-    }
+    // Update state
+    setSelectedDocuments(newSelectedDocs);
   };
 
   const isSelectedForComparison = (result: SearchResult) => {
-    return (comparisonDocs.documentA?.id === result.id || 
-            comparisonDocs.documentB?.id === result.id);
+    return selectedDocuments.some(doc => doc.id === result.id);
   };
 
   const handleReset = () => {
@@ -221,6 +220,7 @@ const Index = () => {
     setCurrentFile(null);
     setCurrentPage(1);
     setSelectedCategory("Todos");
+    setSelectedDocuments([]);
     clearError();
   };
 
@@ -232,16 +232,34 @@ const Index = () => {
     }
   };
 
+  // Dynamic header that collapses when scrolling
+  const renderHeader = () => (
+    <header className={`${searchResults ? "fixed top-0 w-full bg-white/95 backdrop-blur-sm z-50 shadow-sm" : ""} transition-all duration-300`}>
+      <div className="w-full max-w-7xl mx-auto py-3 px-4 sm:px-6 flex justify-center">
+        <Link 
+          to="/" 
+          className={`inline-flex items-center justify-center rounded-full transition-all duration-300 ${
+            searchResults && isMinified 
+              ? "bg-primary/10 p-2" 
+              : "bg-primary/5 hover:bg-primary/10 px-4 py-2"
+          }`}
+        >
+          <Scale className={`${searchResults && isMinified ? "h-5 w-5" : "h-5 w-5 mr-2"} text-primary`} />
+          <span className={`text-sm font-medium text-primary ${searchResults && isMinified ? "sr-only" : ""}`}>
+            Assistente Inteligente PDF
+          </span>
+        </Link>
+      </div>
+    </header>
+  );
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-white to-blue-50 pb-24">
       <Toaster position="bottom-center" />
       
-      <header className="w-full max-w-7xl mx-auto pt-3 pb-8 px-4 sm:px-6 lg:px-8 text-center">
-        <Link to="/" className="inline-flex items-center justify-center bg-primary/5 rounded-full px-4 py-2 mb-4 hover:bg-primary/10 transition-colors">
-          <Scale className="h-5 w-5 text-primary mr-2" />
-          <span className="text-sm font-medium text-primary">Assistente Inteligente PDF</span>
-        </Link>
-        
+      {renderHeader()}
+      
+      <div className={`w-full max-w-7xl mx-auto ${searchResults ? "pt-20" : "pt-3"} pb-8 px-4 sm:px-6 lg:px-8 text-center`}>
         <h1 className="text-3xl sm:text-4xl md:text-5xl font-medium tracking-tight text-foreground mt-4">
           Pesquisa Jurídica Inteligente
         </h1>
@@ -249,7 +267,7 @@ const Index = () => {
         <p className="mt-4 text-lg text-muted-foreground max-w-2xl mx-auto">
           Encontre leis e regulamentos com facilidade. Pesquise por texto ou envie um documento para análise.
         </p>
-      </header>
+      </div>
       
       <main className="w-full max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="glass-card rounded-2xl p-6 sm:p-8 shadow-xl w-full relative overflow-hidden">
@@ -311,10 +329,11 @@ const Index = () => {
                   />
                   <SearchHistory onSelectQuery={handleSearch} />
                   <DocumentComparison 
-                    documentA={comparisonDocs.documentA} 
-                    documentB={comparisonDocs.documentB}
-                    onSelectDocument={handleSelectComparisonDocument}
+                    documentA={null} 
+                    documentB={null}
+                    onSelectDocument={() => {}}
                     isPdfMode={searchMode === 'pdf'}
+                    selectedDocuments={selectedDocuments}
                   />
                 </div>
               </div>
@@ -323,7 +342,7 @@ const Index = () => {
                 {searchMode === 'text' ? (
                   <p>Selecione exatamente dois documentos para compará-los.</p>
                 ) : (
-                  <p>Selecione pelo menos um documento para comparar com seu PDF.</p>
+                  <p>Selecione de 1 a 3 documentos para comparar com seu PDF.</p>
                 )}
               </div>
               
