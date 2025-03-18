@@ -39,6 +39,8 @@ const Index = () => {
     setSelectedCategory("Todos");
     clearError();
     
+    setComparisonDocs({ documentA: null, documentB: null });
+    
     try {
       const results = await searchLegalText(query, 1);
       setSearchResults(results);
@@ -67,6 +69,8 @@ const Index = () => {
     setCurrentPage(1);
     setSelectedCategory("Todos");
     clearError();
+    
+    setComparisonDocs({ documentA: null, documentB: null });
     
     try {
       const results = await analyzePDF(file, 1);
@@ -150,6 +154,19 @@ const Index = () => {
   };
 
   const handleCompareDocument = (result: SearchResult) => {
+    if (searchMode === 'pdf') {
+      if (comparisonDocs.documentA?.id === result.id) {
+        setComparisonDocs({ ...comparisonDocs, documentA: null });
+        toast.info("Documento removido da comparação");
+      } else {
+        setComparisonDocs({ ...comparisonDocs, documentA: result });
+        toast.info("Documento selecionado para comparação", {
+          description: "Clique no botão de comparação para ver os resultados.",
+        });
+      }
+      return;
+    }
+    
     if (comparisonDocs.documentA?.id === result.id) {
       setComparisonDocs({ ...comparisonDocs, documentA: null });
       toast.info("Documento removido da comparação");
@@ -159,14 +176,6 @@ const Index = () => {
     if (comparisonDocs.documentB?.id === result.id) {
       setComparisonDocs({ ...comparisonDocs, documentB: null });
       toast.info("Documento removido da comparação");
-      return;
-    }
-    
-    if (searchMode === 'pdf') {
-      setComparisonDocs({ ...comparisonDocs, documentA: result });
-      toast.info("Documento selecionado para comparação", {
-        description: "Clique no botão de comparação para ver os resultados.",
-      });
       return;
     }
     
@@ -228,6 +237,11 @@ const Index = () => {
       <Toaster position="bottom-center" />
       
       <header className="w-full max-w-7xl mx-auto pt-3 pb-8 px-4 sm:px-6 lg:px-8 text-center">
+        <Link to="/" className="inline-flex items-center justify-center bg-primary/5 rounded-full px-4 py-2 mb-4 hover:bg-primary/10 transition-colors">
+          <Scale className="h-5 w-5 text-primary mr-2" />
+          <span className="text-sm font-medium text-primary">Assistente Inteligente PDF</span>
+        </Link>
+        
         <h1 className="text-3xl sm:text-4xl md:text-5xl font-medium tracking-tight text-foreground mt-4">
           Pesquisa Jurídica Inteligente
         </h1>
@@ -300,8 +314,17 @@ const Index = () => {
                     documentA={comparisonDocs.documentA} 
                     documentB={comparisonDocs.documentB}
                     onSelectDocument={handleSelectComparisonDocument}
+                    isPdfMode={searchMode === 'pdf'}
                   />
                 </div>
+              </div>
+              
+              <div className="mb-4 text-sm text-muted-foreground bg-blue-50 border border-blue-100 rounded-lg p-3">
+                {searchMode === 'text' ? (
+                  <p>Selecione exatamente dois documentos para compará-los.</p>
+                ) : (
+                  <p>Selecione pelo menos um documento para comparar com seu PDF.</p>
+                )}
               </div>
               
               <p className="text-sm text-muted-foreground">

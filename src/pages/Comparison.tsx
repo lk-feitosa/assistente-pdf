@@ -5,7 +5,10 @@ import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { compareDocuments, SearchResult } from "@/lib/api";
 import { Progress } from "@/components/ui/progress";
-import { ArrowLeft, FileText, CheckCircle2, XCircle, AlertTriangle, Scale, Home } from "lucide-react";
+import { 
+  ArrowLeft, FileText, CheckCircle2, XCircle, 
+  AlertTriangle, Scale, Home, File
+} from "lucide-react";
 
 const Comparison = () => {
   const location = useLocation();
@@ -17,11 +20,17 @@ const Comparison = () => {
   // Obter documentos do estado de navegação
   const documentA = location.state?.documentA as SearchResult | null;
   const documentB = location.state?.documentB as SearchResult | null;
+  const isPdfMode = location.state?.isPdfMode as boolean;
 
   useEffect(() => {
-    // Verificar se temos pelo menos um documento para comparar
+    // Verificar se temos documentos adequados para comparação
     if (!documentA) {
       setError("Nenhum documento selecionado para comparação");
+      return;
+    }
+
+    if (!isPdfMode && !documentB) {
+      setError("É necessário selecionar dois documentos para comparação no modo pesquisa");
       return;
     }
 
@@ -30,11 +39,11 @@ const Comparison = () => {
       setComparing(true);
       try {
         // Se temos dois documentos, comparamos eles entre si
-        // Se temos apenas um, simulamos a comparação com um documento de referência
+        // Se temos apenas um (modo PDF), simulamos a comparação com um documento de referência
         if (documentA && documentB) {
           const result = await compareDocuments(documentA.id, documentB.id);
           setComparisonResult(result);
-        } else if (documentA) {
+        } else if (documentA && isPdfMode) {
           // Simulação de comparação com documento único (análise)
           // Na implementação real, isso seria feito contra uma base de documentos padrão
           const result = await compareDocuments(documentA.id, "referenceDoc");
@@ -49,17 +58,22 @@ const Comparison = () => {
     };
 
     performComparison();
-  }, [documentA, documentB]);
+  }, [documentA, documentB, isPdfMode]);
 
-  // Renderizar documento
+  // Renderizar documento na página de comparação
   const renderDocument = (doc: SearchResult | null, position: string) => {
     if (!doc) {
-      if (position === "B") {
+      // Se estamos no modo PDF e não temos documentoB, mostramos o bloco de referência
+      if (position === "B" && isPdfMode) {
         return (
-          <div className="border border-border rounded-lg p-4 bg-background/80 flex items-center justify-center h-full">
-            <p className="text-muted-foreground text-center p-6">
-              Documento de referência para análise jurídica
+          <div className="border border-border rounded-lg p-4 bg-background/80 h-full">
+            <h3 className="font-medium text-lg mb-2">Documento de referência para análise jurídica</h3>
+            <p className="text-sm text-muted-foreground mb-4">
+              Este documento contém os padrões e referências jurídicas utilizados para a análise comparativa.
             </p>
+            <div className="flex items-center justify-center p-6">
+              <File className="h-16 w-16 text-muted-foreground/30" />
+            </div>
           </div>
         );
       }
@@ -67,7 +81,7 @@ const Comparison = () => {
     }
 
     return (
-      <div className="border border-border rounded-lg p-4 bg-background/80">
+      <div className="border border-border rounded-lg p-4 bg-background/80 h-full">
         <h3 className="font-medium text-lg mb-2">{doc.title}</h3>
         <p className="text-sm text-muted-foreground mb-4">{doc.summary}</p>
         
@@ -79,7 +93,15 @@ const Comparison = () => {
           </div>
         )}
         
-        <div className="flex justify-between items-center">
+        {position === "A" && isPdfMode && (
+          <div className="mt-3 mb-4">
+            <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
+              Comparando com seu documento PDF
+            </span>
+          </div>
+        )}
+        
+        <div className="flex justify-between items-center mt-4">
           <span className="text-xs text-muted-foreground truncate flex-1">
             {doc.link}
           </span>
@@ -91,7 +113,7 @@ const Comparison = () => {
             asChild
           >
             <a href={doc.link} target="_blank" rel="noopener noreferrer">
-              Visualizar
+              <span className="whitespace-nowrap">Visualizar</span>
             </a>
           </Button>
         </div>
@@ -145,13 +167,15 @@ const Comparison = () => {
           <>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <h2 className="text-lg font-medium mb-3">Documento A</h2>
+                <h2 className="text-lg font-medium mb-3">
+                  {isPdfMode ? "Documento Selecionado" : "Documento A"}
+                </h2>
                 {renderDocument(documentA, "A")}
               </div>
               
               <div>
                 <h2 className="text-lg font-medium mb-3">
-                  {documentB ? "Documento B" : "Referência"}
+                  {isPdfMode ? "Referência" : "Documento B"}
                 </h2>
                 {renderDocument(documentB, "B")}
               </div>
@@ -176,7 +200,9 @@ const Comparison = () => {
                   </div>
                   
                   <p className="text-muted-foreground max-w-2xl mx-auto">
-                    Esta análise compara o conteúdo, estrutura e contexto jurídico dos documentos selecionados.
+                    {isPdfMode ? 
+                      "Esta análise compara seu documento com as referências jurídicas mais relevantes." :
+                      "Esta análise compara o conteúdo, estrutura e contexto jurídico dos documentos selecionados."}
                   </p>
                 </div>
                 

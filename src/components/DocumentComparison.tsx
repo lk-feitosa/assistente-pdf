@@ -10,9 +10,10 @@ interface DocumentComparisonProps {
   documentA: SearchResult | null;
   documentB: SearchResult | null;
   onSelectDocument: (position: 'A' | 'B', document: SearchResult | null) => void;
+  isPdfMode?: boolean;
 }
 
-const DocumentComparison = ({ documentA, documentB, onSelectDocument }: DocumentComparisonProps) => {
+const DocumentComparison = ({ documentA, documentB, onSelectDocument, isPdfMode = false }: DocumentComparisonProps) => {
   const navigate = useNavigate();
   const [showTooltip, setShowTooltip] = useState(false);
   
@@ -21,17 +22,30 @@ const DocumentComparison = ({ documentA, documentB, onSelectDocument }: Document
 
   // Navegar para a página de comparação
   const handleNavigateToComparison = () => {
-    if (selectedCount === 0) {
-      toast.error("Selecione pelo menos um documento para comparação", {
-        description: "Você precisa selecionar documentos clicando em 'Comparar'"
-      });
-      return;
+    // Diferentes requisitos baseados no modo
+    if (isPdfMode) {
+      // Para análise de PDF, precisamos de pelo menos 1 documento selecionado
+      if (selectedCount === 0) {
+        toast.error("Selecione pelo menos um documento para comparação", {
+          description: "Você precisa selecionar pelo menos um documento clicando em 'Comparar'"
+        });
+        return;
+      }
+    } else {
+      // Para busca de texto, precisamos de exatamente 2 documentos
+      if (selectedCount < 2) {
+        toast.error("Selecione dois documentos para comparação", {
+          description: "Você precisa selecionar exatamente dois documentos clicando em 'Comparar'"
+        });
+        return;
+      }
     }
     
     navigate("/comparison", { 
       state: { 
         documentA, 
-        documentB 
+        documentB,
+        isPdfMode
       } 
     });
   };
@@ -52,32 +66,39 @@ const DocumentComparison = ({ documentA, documentB, onSelectDocument }: Document
     }
   };
 
+  // Verificar se o botão deve estar ativo
+  const isButtonActive = isPdfMode ? selectedCount > 0 : selectedCount === 2;
+
   // Se tivermos documentos selecionados, mostrar o botão para navegar à página de comparação
   return (
     <div className="relative">
       <Button 
-        variant={selectedCount > 0 ? "default" : "outline"}
-        size={selectedCount > 0 ? "sm" : "icon"}
-        className={`${selectedCount > 0 
+        variant={isButtonActive ? "default" : "outline"}
+        size={isButtonActive ? "sm" : "icon"}
+        className={`${isButtonActive 
           ? "bg-primary hover:bg-primary/90 text-primary-foreground transition-colors" 
           : "h-10 w-10 rounded-full bg-background/80 hover:bg-background"}`}
         onClick={handleNavigateToComparison}
         onMouseEnter={() => setShowTooltip(true)}
         onMouseLeave={() => setShowTooltip(false)}
       >
-        {selectedCount > 0 ? (
+        {isButtonActive ? (
           <>
             <ArrowRightLeft className="h-4 w-4 mr-1" />
             <span>
-              {selectedCount === 1 
-                ? "Comparar Selecionado" 
-                : "Comparar Selecionados"}
+              Comparar {isPdfMode ? "Selecionado" : "Selecionados"}
             </span>
           </>
         ) : (
           <CompareButtonIcon />
         )}
       </Button>
+      
+      {showTooltip && !isButtonActive && (
+        <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-1 bg-foreground text-background text-xs rounded whitespace-nowrap z-50">
+          {isPdfMode ? "Selecione pelo menos 1 documento" : "Selecione 2 documentos"}
+        </div>
+      )}
     </div>
   );
 };
