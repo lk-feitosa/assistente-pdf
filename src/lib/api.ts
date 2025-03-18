@@ -139,7 +139,7 @@ export async function searchLegalText(query: string, page: number = 1, category?
     
     console.log(`Encontrados ${filteredResults.length} resultados (página ${page} de ${totalPages})`);
     
-    // Salvar busca no histórico
+    // Salvar busca por texto no histórico (apenas buscas por texto, não PDFs)
     saveSearchToHistory(query);
     
     return {
@@ -177,7 +177,7 @@ export interface SearchHistoryItem {
   timestamp: number;
 }
 
-// Salvar pesquisa no histórico
+// Salvar pesquisa por texto no histórico
 function saveSearchToHistory(query: string): void {
   try {
     const history = getSearchHistory();

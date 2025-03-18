@@ -7,6 +7,7 @@ import { BrowserRouter, Routes, Route, Link } from "react-router-dom";
 import Index from "./pages/Index";
 import Comparison from "./pages/Comparison";
 import NotFound from "./pages/NotFound";
+import { Home } from "lucide-react"; 
 
 const queryClient = new QueryClient();
 
@@ -16,6 +17,15 @@ const App = () => (
       <Toaster />
       <Sonner position="bottom-center" />
       <BrowserRouter>
+        <div className="fixed top-4 right-4 z-50">
+          <Link 
+            to="/" 
+            className="flex items-center justify-center bg-primary/10 rounded-full p-2 hover:bg-primary/20 transition-colors"
+            title="Voltar para a página inicial"
+          >
+            <Home className="h-5 w-5 text-primary" />
+          </Link>
+        </div>
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/comparison" element={<Comparison />} />

@@ -1,7 +1,7 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { History, X, Clock, Search } from "lucide-react";
 import { SearchHistoryItem, getSearchHistory, clearSearchHistory } from "@/lib/api";
 import { format } from "date-fns";
@@ -59,12 +59,15 @@ const SearchHistory = ({ onSelectQuery }: SearchHistoryProps) => {
             <Clock className="h-5 w-5" />
             Histórico de Pesquisas
           </DialogTitle>
+          <DialogDescription>
+            Pesquisas anteriores realizadas por texto
+          </DialogDescription>
         </DialogHeader>
         
         {history.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-8 text-center text-muted-foreground">
             <History className="h-12 w-12 opacity-30 mb-2" />
-            <p>Você ainda não realizou pesquisas.</p>
+            <p>Você ainda não realizou pesquisas por texto.</p>
           </div>
         ) : (
           <div className="flex flex-col gap-2 max-h-[300px] overflow-y-auto">
