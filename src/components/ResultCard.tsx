@@ -70,7 +70,7 @@ const ResultCard = ({
         <div className="flex gap-2">
           {onCompare && (
             <Button
-              variant={isSelectedForComparison ? "default" : "ghost"}
+              variant={isSelectedForComparison ? "default" : "outline"}
               size="sm"
               className={isSelectedForComparison 
                 ? "bg-primary hover:bg-primary/90 text-primary-foreground transition-colors" 

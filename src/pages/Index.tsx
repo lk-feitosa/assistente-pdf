@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Toaster } from "@/components/ui/sonner";
 import { toast } from "sonner";
@@ -149,21 +148,18 @@ const Index = () => {
   };
 
   const handleCompareDocument = (result: SearchResult) => {
-    // Se o documento já está selecionado como documentA, remova-o
     if (comparisonDocs.documentA?.id === result.id) {
       setComparisonDocs({ ...comparisonDocs, documentA: null });
       toast.info("Documento removido da comparação");
       return;
     }
     
-    // Se o documento já está selecionado como documentB, remova-o
     if (comparisonDocs.documentB?.id === result.id) {
       setComparisonDocs({ ...comparisonDocs, documentB: null });
       toast.info("Documento removido da comparação");
       return;
     }
     
-    // Se não temos documentA, adicione como documentA
     if (!comparisonDocs.documentA) {
       setComparisonDocs({ ...comparisonDocs, documentA: result });
       toast.info("Primeiro documento selecionado", {
@@ -172,16 +168,14 @@ const Index = () => {
       return;
     }
     
-    // Se não temos documentB, adicione como documentB
     if (!comparisonDocs.documentB) {
       setComparisonDocs({ ...comparisonDocs, documentB: result });
       toast.success("Documentos prontos para comparação", {
-        description: "Clique no ícone de comparação para ver os resultados.",
+        description: "Clique no botão de comparação para ver os resultados.",
       });
       return;
     }
     
-    // Se ambos já estão selecionados, substitua documentA
     setComparisonDocs({ ...comparisonDocs, documentA: result });
     toast.info("Documento substituído", {
       description: "O primeiro documento foi substituído.",

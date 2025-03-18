@@ -1,11 +1,9 @@
 
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogDescription } from "@/components/ui/dialog";
-import { GitCompare, ArrowRightLeft, CheckCircle2, XCircle, Info, Check } from "lucide-react";
-import { compareDocuments, SearchResult } from "@/lib/api";
-import { Progress } from "@/components/ui/progress";
-import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
+import { GitCompare, ArrowRightLeft } from "lucide-react";
+import { SearchResult } from "@/lib/api";
 import { toast } from "sonner";
 
 interface DocumentComparisonProps {
@@ -15,16 +13,21 @@ interface DocumentComparisonProps {
 }
 
 const DocumentComparison = ({ documentA, documentB, onSelectDocument }: DocumentComparisonProps) => {
-  const [open, setOpen] = useState(false);
-  const [comparing, setComparing] = useState(false);
-  const [comparisonResult, setComparisonResult] = useState<any>(null);
+  const navigate = useNavigate();
   const [showHelperPopover, setShowHelperPopover] = useState(false);
+
+  // Contagem de documentos selecionados
+  const selectedCount = (documentA ? 1 : 0) + (documentB ? 1 : 0);
 
   // Mostrar o popover de ajuda quando iniciar a seleção
   useEffect(() => {
     if (documentA && !documentB && !showHelperPopover) {
+      toast.info("Selecione mais um documento para comparar", {
+        description: "Clique em 'Comparar' em outro resultado para completar a seleção."
+      });
       setShowHelperPopover(true);
-      // Fechar o popover após 5 segundos
+      
+      // Fechar o toast após alguns segundos
       const timer = setTimeout(() => {
         setShowHelperPopover(false);
       }, 5000);
@@ -33,67 +36,22 @@ const DocumentComparison = ({ documentA, documentB, onSelectDocument }: Document
     }
   }, [documentA, documentB, showHelperPopover]);
 
-  // Realizar a comparação
-  const handleCompare = async () => {
-    if (!documentA || !documentB) return;
+  // Navegar para a página de comparação
+  const handleNavigateToComparison = () => {
+    if (!documentA || !documentB) {
+      toast.error("Selecione dois documentos para comparação", {
+        description: "Você precisa selecionar dois documentos nos resultados"
+      });
+      return;
+    }
     
-    setComparing(true);
-    try {
-      const result = await compareDocuments(documentA.id, documentB.id);
-      setComparisonResult(result);
-    } catch (error) {
-      console.error("Erro ao comparar documentos:", error);
-    } finally {
-      setComparing(false);
-    }
+    navigate("/comparison", { 
+      state: { 
+        documentA, 
+        documentB 
+      } 
+    });
   };
-
-  // Formatar documento para exibição
-  const renderDocumentCard = (doc: SearchResult | null, position: 'A' | 'B') => {
-    if (!doc) {
-      return (
-        <div className="border border-dashed border-muted-foreground/30 rounded-lg p-4 text-center bg-background/50 h-[120px] flex flex-col items-center justify-center">
-          <p className="text-muted-foreground">Selecione um documento para comparação</p>
-          <p className="text-xs text-muted-foreground/70 mt-1">
-            Selecione um resultado da busca para adicionar aqui
-          </p>
-        </div>
-      );
-    }
-
-    return (
-      <div className="border border-border rounded-lg p-4 bg-background/80">
-        <div className="flex items-start justify-between">
-          <h4 className="font-medium line-clamp-2 text-sm">{doc.title}</h4>
-          <div className="bg-primary text-primary-foreground rounded-full p-1 ml-2 flex-shrink-0">
-            <Check className="h-3 w-3" />
-          </div>
-        </div>
-        <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{doc.summary}</p>
-        <div className="flex justify-between items-center mt-2">
-          <a 
-            href={doc.link} 
-            target="_blank" 
-            rel="noopener noreferrer"
-            className="text-xs text-primary hover:underline"
-          >
-            Visualizar
-          </a>
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            className="h-6 text-xs text-destructive"
-            onClick={() => onSelectDocument(position, null)}
-          >
-            Remover
-          </Button>
-        </div>
-      </div>
-    );
-  };
-
-  // Contagem de documentos selecionados
-  const selectedCount = (documentA ? 1 : 0) + (documentB ? 1 : 0);
 
   // Ícone do botão com estado de comparação
   const CompareButtonIcon = () => {
@@ -122,130 +80,37 @@ const DocumentComparison = ({ documentA, documentB, onSelectDocument }: Document
 
   return (
     <div className="relative">
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogTrigger asChild>
-          <Button 
-            variant="outline" 
-            size="icon" 
-            className={`h-10 w-10 rounded-full ${selectedCount > 0 ? 'bg-primary/20 hover:bg-primary/30' : 'bg-background/80 hover:bg-background'}`}
-            onClick={() => {
-              if (selectedCount === 0) {
-                toast.info("Selecione documentos para comparar", {
-                  description: "Você precisa selecionar documentos para fazer a comparação."
-                });
-              }
-            }}
-          >
-            <CompareButtonIcon />
-            <span className="sr-only">Comparar documentos</span>
-          </Button>
-        </DialogTrigger>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <GitCompare className="h-5 w-5" />
-              Comparação de Documentos Legais
-            </DialogTitle>
-            <DialogDescription>
-              Selecione dois documentos nos resultados de busca para compará-los.
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 my-4">
-            <div>
-              <p className="text-sm font-medium mb-2">Documento A</p>
-              {renderDocumentCard(documentA, 'A')}
-            </div>
-            
-            <div>
-              <p className="text-sm font-medium mb-2">Documento B</p>
-              {renderDocumentCard(documentB, 'B')}
-            </div>
-          </div>
-          
-          {comparing ? (
-            <div className="my-4 text-center">
-              <p className="text-sm mb-2">Comparando documentos...</p>
-              <Progress value={45} className="h-2 w-full" />
-            </div>
-          ) : comparisonResult ? (
-            <div className="bg-muted/30 rounded-lg p-4 mt-4">
-              <div className="flex items-center justify-center mb-4">
-                <div className="bg-primary/10 text-primary font-medium rounded-full px-4 py-2 text-sm">
-                  {comparisonResult.similarity}% de similaridade
-                </div>
-              </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <h4 className="text-sm font-medium mb-2 flex items-center">
-                    <CheckCircle2 className="h-4 w-4 text-green-500 mr-1" />
-                    Tópicos em comum
-                  </h4>
-                  <ul className="text-xs space-y-1">
-                    {comparisonResult.commonTopics.map((topic: string, i: number) => (
-                      <li key={i} className="bg-green-50 text-green-700 rounded px-2 py-1">
-                        {topic}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-                
-                <div>
-                  <h4 className="text-sm font-medium mb-2 flex items-center">
-                    <XCircle className="h-4 w-4 text-amber-500 mr-1" />
-                    Diferenças
-                  </h4>
-                  <ul className="text-xs space-y-1">
-                    {comparisonResult.differences.map((diff: string, i: number) => (
-                      <li key={i} className="bg-amber-50 text-amber-700 rounded px-2 py-1">
-                        {diff}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              </div>
-            </div>
-          ) : null}
-          
-          <DialogFooter>
-            <Button 
-              variant="outline" 
-              onClick={() => {
-                setComparisonResult(null);
-                setOpen(false);
-              }}
-            >
-              Fechar
-            </Button>
-            <Button 
-              onClick={handleCompare}
-              disabled={!documentA || !documentB || comparing}
-            >
-              <ArrowRightLeft className="h-4 w-4 mr-1" />
-              Comparar
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Popover de ajuda que aparece quando o usuário seleciona o primeiro documento */}
-      <Popover open={showHelperPopover} onOpenChange={setShowHelperPopover}>
-        <PopoverTrigger asChild>
-          <div className="absolute inset-0 w-full h-full cursor-pointer"></div>
-        </PopoverTrigger>
-        <PopoverContent className="w-72 bg-white p-4 shadow-md border border-primary/20">
-          <div className="flex items-start">
-            <Info className="h-4 w-4 text-primary mr-2 mt-0.5 flex-shrink-0" />
-            <div>
-              <h4 className="font-medium text-sm">Primeiro documento selecionado</h4>
-              <p className="text-xs text-muted-foreground mt-1">
-                Selecione mais um documento para poder compará-los. Clique no botão "Comparar" em outro resultado.
-              </p>
-            </div>
-          </div>
-        </PopoverContent>
-      </Popover>
+      {selectedCount === 2 ? (
+        <Button 
+          variant="default"
+          size="sm"
+          className="bg-primary hover:bg-primary/90 text-primary-foreground transition-colors"
+          onClick={handleNavigateToComparison}
+        >
+          <ArrowRightLeft className="h-4 w-4 mr-1" />
+          <span>Comparar Selecionados</span>
+        </Button>
+      ) : (
+        <Button 
+          variant="outline" 
+          size="icon" 
+          className={`h-10 w-10 rounded-full ${selectedCount > 0 ? 'bg-primary/20 hover:bg-primary/30' : 'bg-background/80 hover:bg-background'}`}
+          onClick={() => {
+            if (selectedCount === 0) {
+              toast.info("Selecione documentos para comparar", {
+                description: "Você precisa selecionar documentos para fazer a comparação."
+              });
+            } else if (selectedCount === 1) {
+              toast.info("Selecione mais um documento", {
+                description: "Clique em 'Comparar' em outro resultado para completar a seleção."
+              });
+            }
+          }}
+        >
+          <CompareButtonIcon />
+          <span className="sr-only">Comparar documentos</span>
+        </Button>
+      )}
     </div>
   );
 };
