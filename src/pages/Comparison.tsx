@@ -32,15 +32,24 @@ const Comparison = () => {
   const isMinified = scrollPosition > 50;
 
   useEffect(() => {
-    // Check if we have adequate documents for comparison
-    if (!documentA && selectedDocuments.length === 0) {
-      setError("Nenhum documento selecionado para comparação");
-      return;
-    }
-
-    if (!isPdfMode && (!documentA || !documentB)) {
-      setError("É necessário selecionar dois documentos para comparação no modo pesquisa");
-      return;
+    // Verificação de documentos para comparação
+    if (isPdfMode) {
+      // Para PDF mode, precisamos de pelo menos 1 documento e no máximo 3
+      if (selectedDocuments.length < 1) {
+        setError("Selecione pelo menos um documento para comparação no modo PDF");
+        return;
+      }
+      
+      if (selectedDocuments.length > 3) {
+        setError("Máximo de 3 documentos atingido para o modo PDF");
+        return;
+      }
+    } else {
+      // Para text mode, precisamos de exatamente 2 documentos
+      if (!documentA || !documentB) {
+        setError("É necessário selecionar dois documentos para comparação no modo pesquisa");
+        return;
+      }
     }
 
     // Perform comparison automatically when the page loads
@@ -48,7 +57,7 @@ const Comparison = () => {
       setComparing(true);
       try {
         // If using selectedDocuments array (multiple documents in PDF mode)
-        if (selectedDocuments.length > 0) {
+        if (isPdfMode && selectedDocuments.length > 0) {
           // Use first document as reference
           const result = await compareDocuments(selectedDocuments[0].id, "referenceDoc");
           setComparisonResult(result);
@@ -71,7 +80,10 @@ const Comparison = () => {
       }
     };
 
-    performComparison();
+    // Se não houver erro de validação, realizar a comparação
+    if (!error) {
+      performComparison();
+    }
   }, [documentA, documentB, isPdfMode, selectedDocuments]);
 
   // Render document in comparison page

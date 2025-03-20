@@ -36,7 +36,7 @@ const DocumentComparison = ({
   const handleNavigateToComparison = () => {
     // Different requirements based on mode
     if (isPdfMode) {
-      // For PDF analysis, we need at least 1 document selected and at most 3
+      // Para modo PDF, precisa de 1-3 documentos
       if (selectedCount < 1) {
         toast.error("Selecione pelo menos um documento para comparação", {
           description: "Você precisa selecionar pelo menos um documento clicando em 'Comparar'"
@@ -51,7 +51,7 @@ const DocumentComparison = ({
         return;
       }
     } else {
-      // For text search, we need exactly 2 documents
+      // Para modo de texto, precisamos de exatamente 2 documentos
       if (selectedCount !== 2) {
         toast.error("Selecione exatamente dois documentos para comparação", {
           description: "Você precisa selecionar exatamente dois documentos clicando em 'Comparar'"
@@ -60,14 +60,26 @@ const DocumentComparison = ({
       }
     }
     
-    navigate("/comparison", { 
-      state: { 
+    // Configurando os documentos para passar ao estado de navegação
+    let navigationState;
+    
+    if (isPdfMode) {
+      navigationState = { 
+        isPdfMode: true,
+        selectedDocuments,
+        documentA: selectedDocuments.length > 0 ? selectedDocuments[0] : null,
+        documentB: null
+      };
+    } else {
+      navigationState = { 
+        isPdfMode: false,
         documentA, 
         documentB,
-        isPdfMode,
-        selectedDocuments
-      } 
-    });
+        selectedDocuments: []
+      };
+    }
+    
+    navigate("/comparison", { state: navigationState });
   };
 
   // Button icon with comparison state
