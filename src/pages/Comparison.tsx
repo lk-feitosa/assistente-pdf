@@ -10,6 +10,7 @@ import {
   AlertTriangle, Scale, File, ChevronLeft
 } from "lucide-react";
 import { useScrollPosition } from "@/hooks/useScrollPosition";
+import { LegalAIChat } from "@/components/LegalAIChat";
 
 const Comparison = () => {
   const location = useLocation();
@@ -355,6 +356,16 @@ const Comparison = () => {
           </>
         )}
       </main>
+      
+      {/* Chat de IA para tirar dúvidas */}
+      {!error && (comparisonResult || comparing) && (
+        <LegalAIChat 
+          documentA={documentA} 
+          documentB={documentB} 
+          isPdfMode={isPdfMode}
+          similarityScore={comparisonResult?.similarity}
+        />
+      )}
     </div>
   );
 };
