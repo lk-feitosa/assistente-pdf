@@ -79,6 +79,9 @@ const DocumentComparison = ({
       };
     }
     
+    // Adicionar logs para debug
+    console.log("Navegando para comparação com estado:", navigationState);
+    
     navigate("/comparison", { state: navigationState });
   };
 

@@ -32,6 +32,17 @@ const Comparison = () => {
   const isMinified = scrollPosition > 50;
 
   useEffect(() => {
+    // Log para debug
+    console.log("Estado recebido na página de comparação:", {
+      documentA,
+      documentB,
+      isPdfMode,
+      selectedDocuments
+    });
+    
+    // Limpar qualquer erro anterior
+    setError(null);
+    
     // Verificação de documentos para comparação
     if (isPdfMode) {
       // Para PDF mode, precisamos de pelo menos 1 documento e no máximo 3
@@ -64,6 +75,7 @@ const Comparison = () => {
         }
         // If we have two documents, compare them to each other
         else if (documentA && documentB) {
+          console.log(`Comparando documento A (${documentA.id}) com documento B (${documentB.id})`);
           const result = await compareDocuments(documentA.id, documentB.id);
           setComparisonResult(result);
         } 

@@ -186,8 +186,11 @@ const Index = () => {
         // Text mode: exactly 2 documents
         if (newSelectedDocs.length >= 2) {
           // Replace the first document
-          newSelectedDocs[0] = result;
-          toast.info("Primeiro documento substituído");
+          newSelectedDocs.shift(); // Remove o primeiro
+          newSelectedDocs.push(result); // Adiciona o novo no final
+          toast.info("Primeiro documento substituído", {
+            description: "Agora você tem dois documentos selecionados para comparação."
+          });
         } else {
           // Add the document
           newSelectedDocs.push(result);
@@ -204,6 +207,9 @@ const Index = () => {
         }
       }
     }
+    
+    // Log para debug
+    console.log("Documentos selecionados após atualização:", newSelectedDocs);
     
     // Update state
     setSelectedDocuments(newSelectedDocs);
@@ -329,8 +335,8 @@ const Index = () => {
                   />
                   <SearchHistory onSelectQuery={handleSearch} />
                   <DocumentComparison 
-                    documentA={null} 
-                    documentB={null}
+                    documentA={selectedDocuments.length > 0 ? selectedDocuments[0] : null} 
+                    documentB={selectedDocuments.length > 1 ? selectedDocuments[1] : null}
                     onSelectDocument={() => {}}
                     isPdfMode={searchMode === 'pdf'}
                     selectedDocuments={selectedDocuments}
