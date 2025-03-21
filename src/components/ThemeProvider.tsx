@@ -55,18 +55,6 @@ interface ThemeToggleProps {
 export const ThemeToggle = ({ className, iconOnly = false }: ThemeToggleProps) => {
   const { theme, toggleTheme } = useTheme();
   
-  if (iconOnly) {
-    return (
-      <button 
-        onClick={toggleTheme}
-        className={cn("transition-colors", className)}
-        aria-label="Alternar tema"
-      >
-        <SunMoon className="h-5 w-5" />
-      </button>
-    );
-  }
-  
   return (
     <button 
       onClick={toggleTheme}
