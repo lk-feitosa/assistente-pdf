@@ -52,7 +52,7 @@ interface ThemeToggleProps {
   iconOnly?: boolean;
 }
 
-export const ThemeToggle = ({ className }: ThemeToggleProps) => {
+export const ThemeToggle = ({ className, iconOnly = false }: ThemeToggleProps) => {
   const { theme, toggleTheme } = useTheme();
   
   return (
@@ -66,13 +66,13 @@ export const ThemeToggle = ({ className }: ThemeToggleProps) => {
     >
       {theme === 'light' ? (
         <>
-          <Sun className="h-[1.2rem] w-[1.2rem]" />
-          <span className="text-sm">Modo escuro</span>
+          <Moon className="h-[1.2rem] w-[1.2rem]" />
+          {!iconOnly && <span className="text-sm">Modo escuro</span>}
         </>
       ) : (
         <>
-          <Moon className="h-[1.2rem] w-[1.2rem]" />
-          <span className="text-sm">Modo claro</span>
+          <Sun className="h-[1.2rem] w-[1.2rem]" />
+          {!iconOnly && <span className="text-sm">Modo claro</span>}
         </>
       )}
     </button>
