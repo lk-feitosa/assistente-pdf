@@ -1,6 +1,5 @@
-
-import { useState, useEffect } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Toaster } from "@/components/ui/sonner";
 import { toast } from "sonner";
 import SearchBar from "@/components/SearchBar";
@@ -13,12 +12,11 @@ import CategoryFilter from "@/components/CategoryFilter";
 import SearchHistory from "@/components/SearchHistory";
 import DocumentComparison from "@/components/DocumentComparison";
 import { searchLegalText, analyzePDF, SearchResponse, SearchResult } from "@/lib/api";
-import { Scale, FileText, ChevronLeft, AlertCircle } from "lucide-react";
-import { useScrollPosition } from "@/hooks/useScrollPosition";
+import { Scale, FileText, ChevronLeft, AlertCircle, Search } from "lucide-react";
+import { Header } from "@/components/Header";
 
 const Index = () => {
   const navigate = useNavigate();
-  const scrollPosition = useScrollPosition();
   const [searchResults, setSearchResults] = useState<SearchResponse | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [searchMode, setSearchMode] = useState<'text' | 'pdf' | null>(null);
@@ -28,9 +26,6 @@ const Index = () => {
   const [selectedCategory, setSelectedCategory] = useState("Todos");
   const [selectedDocuments, setSelectedDocuments] = useState<SearchResult[]>([]);
   const [error, setError] = useState<{title: string, description: string} | null>(null);
-  
-  // Minify header on scroll
-  const isMinified = scrollPosition > 50;
   
   const clearError = () => setError(null);
 
@@ -157,20 +152,15 @@ const Index = () => {
   };
 
   const handleCompareDocument = (result: SearchResult) => {
-    // Create a copy of the current selected documents
     const newSelectedDocs = [...selectedDocuments];
     
-    // Check if this document is already selected
     const existingIndex = newSelectedDocs.findIndex(doc => doc.id === result.id);
     
     if (existingIndex >= 0) {
-      // If already selected, remove it
       newSelectedDocs.splice(existingIndex, 1);
       toast.info("Documento removido da comparação");
     } else {
-      // If not selected, check mode restrictions
       if (searchMode === 'pdf') {
-        // PDF mode: up to 3 documents
         if (newSelectedDocs.length >= 3) {
           toast.error("Máximo de 3 documentos atingido", {
             description: "Remova um documento para selecionar este."
@@ -183,16 +173,13 @@ const Index = () => {
           description: "Clique no botão de comparação para ver os resultados.",
         });
       } else {
-        // Text mode: exactly 2 documents
         if (newSelectedDocs.length >= 2) {
-          // Replace the first document
-          newSelectedDocs.shift(); // Remove o primeiro
-          newSelectedDocs.push(result); // Adiciona o novo no final
+          newSelectedDocs.shift();
+          newSelectedDocs.push(result);
           toast.info("Primeiro documento substituído", {
             description: "Agora você tem dois documentos selecionados para comparação."
           });
         } else {
-          // Add the document
           newSelectedDocs.push(result);
           
           if (newSelectedDocs.length === 1) {
@@ -208,10 +195,6 @@ const Index = () => {
       }
     }
     
-    // Log para debug
-    console.log("Documentos selecionados após atualização:", newSelectedDocs);
-    
-    // Update state
     setSelectedDocuments(newSelectedDocs);
   };
 
@@ -238,34 +221,13 @@ const Index = () => {
     }
   };
 
-  // Dynamic header that collapses when scrolling
-  const renderHeader = () => (
-    <header className={`${searchResults ? "fixed top-0 w-full bg-white/95 backdrop-blur-sm z-50 shadow-sm" : ""} transition-all duration-300`}>
-      <div className="w-full max-w-7xl mx-auto py-3 px-4 sm:px-6 flex justify-center">
-        <Link 
-          to="/" 
-          className={`inline-flex items-center justify-center rounded-full transition-all duration-300 ${
-            searchResults && isMinified 
-              ? "bg-primary/10 p-2" 
-              : "bg-primary/5 hover:bg-primary/10 px-4 py-2"
-          }`}
-        >
-          <Scale className={`${searchResults && isMinified ? "h-5 w-5" : "h-5 w-5 mr-2"} text-primary`} />
-          <span className={`text-sm font-medium text-primary ${searchResults && isMinified ? "sr-only" : ""}`}>
-            Assistente Inteligente PDF
-          </span>
-        </Link>
-      </div>
-    </header>
-  );
-
   return (
     <div className="min-h-screen bg-gradient-to-b from-white to-blue-50 pb-24">
       <Toaster position="bottom-center" />
       
-      {renderHeader()}
+      <Header />
       
-      <div className={`w-full max-w-7xl mx-auto ${searchResults ? "pt-20" : "pt-3"} pb-8 px-4 sm:px-6 lg:px-8 text-center`}>
+      <div className={`w-full max-w-7xl mx-auto pt-24 pb-8 px-4 sm:px-6 lg:px-8 text-center`}>
         <h1 className="text-3xl sm:text-4xl md:text-5xl font-medium tracking-tight text-foreground mt-4">
           Pesquisa Jurídica Inteligente
         </h1>
@@ -314,8 +276,23 @@ const Index = () => {
                 <SearchHistory onSelectQuery={handleSearch} />
               </div>
               
-              <SearchBar onSearch={handleSearch} isLoading={isLoading} />
-              <FileUpload onFileSelect={handleFileAnalysis} isLoading={isLoading} />
+              <div className="grid grid-cols-1 md:grid-cols-1 gap-8">
+                <div className="bg-white/70 p-6 rounded-xl shadow-sm">
+                  <h3 className="text-lg font-medium mb-4 flex items-center gap-2">
+                    <Search className="h-5 w-5 text-primary" />
+                    Pesquisa por Texto
+                  </h3>
+                  <SearchBar onSearch={handleSearch} isLoading={isLoading} />
+                </div>
+                
+                <div className="bg-white/70 p-6 rounded-xl shadow-sm">
+                  <h3 className="text-lg font-medium mb-4 flex items-center gap-2">
+                    <FileText className="h-5 w-5 text-primary" />
+                    Análise de PDF
+                  </h3>
+                  <FileUpload onFileSelect={handleFileAnalysis} isLoading={isLoading} />
+                </div>
+              </div>
             </div>
           ) : (
             <div className="mt-6">

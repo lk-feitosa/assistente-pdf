@@ -20,9 +20,9 @@ export function Header() {
   return (
     <header
       className={cn(
-        "fixed top-0 left-0 right-0 z-50 flex items-center justify-between transition-all duration-300",
+        "fixed top-0 left-0 right-0 z-50 flex items-center justify-between transition-all duration-300 bg-background/95 backdrop-blur-sm shadow-sm",
         isScrolled
-          ? "h-14 px-4 bg-background/80 backdrop-blur shadow-md"
+          ? "h-14 px-4"
           : "h-20 px-6"
       )}
     >

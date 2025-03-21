@@ -1,7 +1,7 @@
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { cn } from '@/lib/utils';
-import { Moon, Sun, SunMoon } from 'lucide-react';
+import { Moon, Sun } from 'lucide-react';
 
 type Theme = 'light' | 'dark';
 
@@ -52,7 +52,7 @@ interface ThemeToggleProps {
   iconOnly?: boolean;
 }
 
-export const ThemeToggle = ({ className, iconOnly = false }: ThemeToggleProps) => {
+export const ThemeToggle = ({ className }: ThemeToggleProps) => {
   const { theme, toggleTheme } = useTheme();
   
   return (
