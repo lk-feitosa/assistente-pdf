@@ -1,7 +1,7 @@
 
 import { useScrollPosition } from "@/hooks/useScrollPosition";
 import { cn } from "@/lib/utils";
-import { Scale, MenuIcon } from "lucide-react";
+import { Scale, MenuIcon, SunMoon, List } from "lucide-react";
 import { Link } from "react-router-dom";
 import { ThemeToggle } from "./ThemeProvider";
 import {
@@ -41,7 +41,7 @@ export function Header() {
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <button className="flex items-center justify-center h-10 w-10 rounded-full hover:bg-accent transition-colors">
-              <MenuIcon className="h-5 w-5" />
+              <List className="h-5 w-5" />
             </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">

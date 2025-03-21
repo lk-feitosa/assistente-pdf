@@ -50,27 +50,25 @@ export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
 
 export const ThemeToggle = ({ className }: { className?: string }) => {
   const { theme, toggleTheme } = useTheme();
-  const scrollPosition = useScrollPosition();
-  const isScrolled = scrollPosition > 50;
-
+  
   return (
     <button 
       onClick={toggleTheme}
       className={cn(
-        "flex items-center gap-2 transition-all duration-200",
+        "flex items-center gap-2 transition-all duration-200 w-full",
         className
       )}
       aria-label="Alternar tema"
     >
       {theme === 'light' ? (
         <>
-          <Sun className={cn("h-[1.2rem] w-[1.2rem]", isScrolled ? "h-4 w-4" : "h-5 w-5")} />
-          <span className="text-sm">Modo claro</span>
+          <Sun className="h-[1.2rem] w-[1.2rem]" />
+          <span className="text-sm">Modo escuro</span>
         </>
       ) : (
         <>
-          <Moon className={cn("h-[1.2rem] w-[1.2rem]", isScrolled ? "h-4 w-4" : "h-5 w-5")} />
-          <span className="text-sm">Modo escuro</span>
+          <Moon className="h-[1.2rem] w-[1.2rem]" />
+          <span className="text-sm">Modo claro</span>
         </>
       )}
     </button>
