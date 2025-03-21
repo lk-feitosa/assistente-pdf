@@ -1,7 +1,7 @@
 
 import { useScrollPosition } from "@/hooks/useScrollPosition";
 import { cn } from "@/lib/utils";
-import { Scale, MenuIcon, SunMoon, List } from "lucide-react";
+import { Scale, SunMoon } from "lucide-react";
 import { Link } from "react-router-dom";
 import { ThemeToggle } from "./ThemeProvider";
 import {
@@ -38,20 +38,10 @@ export function Header() {
         ) : null}
       </Link>
       <div className="flex items-center gap-2">
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <button className="flex items-center justify-center h-10 w-10 rounded-full hover:bg-accent transition-colors">
-              <List className="h-5 w-5" />
-            </button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuLabel>Opções</DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem>
-              <ThemeToggle className="w-full justify-start px-0" />
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <ThemeToggle 
+          className="h-10 w-10 rounded-full hover:bg-accent flex items-center justify-center transition-colors"
+          iconOnly={true}
+        />
       </div>
     </header>
   );

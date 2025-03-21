@@ -1,8 +1,7 @@
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { useScrollPosition } from '@/hooks/useScrollPosition';
 import { cn } from '@/lib/utils';
-import { Moon, Sun } from 'lucide-react';
+import { Moon, Sun, SunMoon } from 'lucide-react';
 
 type Theme = 'light' | 'dark';
 
@@ -48,8 +47,25 @@ export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
   );
 };
 
-export const ThemeToggle = ({ className }: { className?: string }) => {
+interface ThemeToggleProps {
+  className?: string;
+  iconOnly?: boolean;
+}
+
+export const ThemeToggle = ({ className, iconOnly = false }: ThemeToggleProps) => {
   const { theme, toggleTheme } = useTheme();
+  
+  if (iconOnly) {
+    return (
+      <button 
+        onClick={toggleTheme}
+        className={cn("transition-colors", className)}
+        aria-label="Alternar tema"
+      >
+        <SunMoon className="h-5 w-5" />
+      </button>
+    );
+  }
   
   return (
     <button 
